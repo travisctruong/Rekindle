@@ -1,1 +1,1 @@
-# Rekindle-Personalized-Music-Rediscovery-Platform
+# Rekindle - Personalized Music Rediscovery Platform
