@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run backend",
+            "type": "shell",
+            "command": "cd backend; uv run fastapi dev"
+        },
+        {
+            "label": "Run frontend",
+            "type": "shell",
+            "command": "cd frontend; npm run dev"
+        }
+    ]
+}
