@@ -1,0 +1,10 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+keys/
+__pycache__/
+backend/__pycache__/
+backend/apple_music/__pycache__/
+backend/database/__pycache__/
+backend/models/__pycache__/

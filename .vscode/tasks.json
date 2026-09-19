@@ -4,7 +4,7 @@
         {
             "label": "Run backend",
             "type": "shell",
-            "command": "cd backend; uv run fastapi dev"
+            "command": "cd backend; $env:PYTHONPATH='..'; uv run python -m fastapi dev main.py"
         },
         {
             "label": "Run frontend",
