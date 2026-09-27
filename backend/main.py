@@ -1,47 +1,25 @@
 from fastapi import Depends, FastAPI
-from sqlalchemy.orm import Session
-import httpx
+from fastapi.middleware.cors import CORSMiddleware
+from routes import apple_music, songs
 
-from apple_music.auth import generate_developer_token
-from database.database import Base, engine, get_db
-from models.song import Song
+from database.database import Base, engine
 
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+app.include_router(apple_music.router)
+app.include_router(songs.router)
+
+Base.metadata.create_all(bind=engine)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8001"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/")
 def main():
-    return {"message": "Hello World"}
-
-@app.get("/songs")
-def get_songs(db: Session = Depends(get_db)):
-    songs = db.query(Song).all()
-    return songs
-
-@app.get("/test-token")
-def test_token():
-    token = generate_developer_token()
-
-    return {
-        "token": token
-    }
-
-@app.get("/test-apple")
-async def test_apple():
-    token = generate_developer_token()
-
-    headers = {
-        "Authorization": f"Bearer {token}"
-    }
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            "https://api.music.apple.com/v1/catalog/us/songs/203709340",
-            headers=headers
-        )
-
-    return {
-        "status": response.status_code,
-        "data": response.json()
-    }
+    return {"message": "Rekindle API"}
