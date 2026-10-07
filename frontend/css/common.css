@@ -1,0 +1,46 @@
+:root {
+    --palette-neon-blue-light: #123778;
+    --palette-neon-blue: #071b45;
+    --palette-neon-blue-deep: #030712;
+    --palette-sidebar: #0a1630;
+    --palette-black: #03050a;
+    --color-accent: #38BDF8;
+    --color-blue-50: #eff6ff;
+    --color-blue-100: #dbeafe;
+    --color-blue-300: #93c5fd;
+    --color-blue-500: #3b82f6;
+    --color-blue-700: #1d4ed8;
+    --color-blue-900: #1e3a8a;
+    --color-accent-black: #111827;
+    --color-shadow: rgba(0, 0, 0, 0.15);
+}
+
+body {
+    margin: 0;
+}
+
+.body {
+    padding: 0px var(--gutter);
+}
+
+.header {
+    justify-content: center;
+    align-items: center;
+}
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+
+    --color-blue-100: #174796;
+    --color-accent-black: var(--palette-black);
+    --color-shadow: rgba(0, 0, 0, 0.45);
+
+    color: #dbeafe;
+    background: linear-gradient(
+        135deg,
+        var(--palette-neon-blue-light),
+        var(--palette-neon-blue) 45%,
+        var(--palette-neon-blue-deep)
+    );
+}

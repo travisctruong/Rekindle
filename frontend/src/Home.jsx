@@ -1,9 +1,19 @@
-import AppleMusicConnect from '../components/AppleMusicConnect'
+import '../css/home.css'
+import Sidebar from '../components/Sidebar';
 
 function Home() {
-  return (
-    <AppleMusicConnect />
-  );
+    return (
+        <div className='layout'>
+            <Sidebar />
+
+            <header>
+            
+            </header>
+            <div className="body">
+
+            </div>
+        </div>
+    );
 }
 
 export default Home;
