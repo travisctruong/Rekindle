@@ -58,6 +58,7 @@ class AppleMusicService:
 
         raise RuntimeError(f"Failed to fetch Apple Music page: {url}")
 
+    # Sync Apple Music Library
     async def fetch_and_store_songs(
         self, music_user_token: str
     ) -> int:
@@ -166,3 +167,28 @@ class AppleMusicService:
             raise
 
         return len(songs_by_id)
+
+    async def fetch_recently_added(
+        self, music_user_token: str
+    ) -> dict[str, dict]:
+            headers = {
+                "Authorization": f"Bearer {generate_developer_token()}",
+                "Music-User-Token": music_user_token,
+            }
+            url = "https://api.music.apple.com/v1/me/library/recently-added?limit=10"
+            timeout = httpx.Timeout(30.0, connect=10.0)
+            albums_by_id = {}
+
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                while url and len(albums_by_id) < 10:
+                    payload = await self._fetch_library_page(client, url, headers)
+                    for item in payload.get("data", []):
+                        if item.get("type") == "library-albums":
+                            albums_by_id[item["id"]] = item.get("attributes", {})
+                            if len(albums_by_id) == 10:
+                                break
+
+                    next_url = payload.get("next")
+                    url = urljoin(url, next_url) if next_url else ""
+
+            return albums_by_id

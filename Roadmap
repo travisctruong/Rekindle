@@ -1,0 +1,49 @@
+              DONE
+                ↓
+     Apple Music integration
+                ↓
+        User + Song database
+                ↓
+        Song synchronization
+                ↓
+       Create rekindle_data
+                ↓
+       Basic Rekindle logic
+                ↓
+       React Rekindle screen
+                ↓
+    ★ Music player (adds to rekindle count) + Genre-specific playlists + Recently added 
+                ↓
+       Track user activity (favouriting rekindles, won't show up again) + Connecting Apple Music Bug
+                ↓
+       Music library explorer (most rekindled) + Playlist migration (favourite all function)
+                ↓
+       Statistics & analytics (find more stats to start tracking)
+                ↓
+       Music-centre dashboard
+                ↓
+        Apple Replay section
+                ↓
+    Better recommendations (takes into account date added)
+                ↓
+       ML experimentation
+                ↓
+          Deployment
+                ↓
+    Cron Jobs + Emails (custom notifications that 10 rekindle for me)
+
+
+Statistics list (overview page):
+- Chart of how many songs, albums, artists added recently by day/week/month (graphs, piecharts?)
+- Most rekindled songs/artists
+- Recently added songs to library
+- Recently listened to songs
+- Favourited rate
+- Songs by genre (graph)
+- 'New' tag (for stating out-of-sync)
+
+Analytics
+- Most played songs recently
+- Rekindle streak
+- Rekindled this month
+- Milestones (100th song, etc.)

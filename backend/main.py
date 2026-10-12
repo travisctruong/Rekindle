@@ -1,6 +1,6 @@
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import apple_music, songs
+from routes import apple_music, rekindle, songs
 
 from database.database import Base, engine
 
@@ -8,6 +8,7 @@ from database.database import Base, engine
 app = FastAPI()
 
 app.include_router(apple_music.router)
+app.include_router(rekindle.router)
 app.include_router(songs.router)
 
 Base.metadata.create_all(bind=engine)

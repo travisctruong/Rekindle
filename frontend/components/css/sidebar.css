@@ -1,13 +1,14 @@
 .sidebar {
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--palette-neon-blue-light);
+    /* border-right: 1px solid var(--palette-neon-blue-light); */
     padding: var(--que__pad-s);
     padding-right: var(--que__pad-l);
     background-color: var(--palette-sidebar);
 }
 .sidebar h2 {
     padding: var(--que__pad-m);
+    font-family: var(--que__font__family-title);
     & > a {
         text-decoration: none;
         color: var(--color-accent);
@@ -42,6 +43,7 @@
     padding: 4px;
     font-size: small;
     text-align: center;
+    /* font-family: var(--que__font__family-title); */
 }
 .sidebar__nav a > span::before {
     content: attr(que-icon);

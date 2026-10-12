@@ -80,3 +80,29 @@ async def get_apple_music_songs(db: Session = Depends(get_db)):
         )
         raise HTTPException(status_code=status_code, detail=detail) from exc
     return {"stored": count}
+
+@router.get("/recently-added")
+async def get_recently_added(db: Session = Depends(get_db)):
+    """
+    Grab user's 10 most recently added albums
+    """
+    if not music_user_token:
+        raise HTTPException(status_code=400, detail="Connect Apple Music first")
+    try:
+        recently_added = await AppleMusicService(db).fetch_recently_added(
+            music_user_token=music_user_token,
+        )
+    except httpx.TimeoutException as exc:
+        raise HTTPException(
+            status_code=504,
+            detail="Apple Music API timed out; retry the request later",
+        ) from exc
+    except httpx.HTTPStatusError as exc:
+        status_code = 429 if exc.response.status_code == 429 else 502
+        detail = (
+            "Apple Music rate limit reached; retry the request later"
+            if status_code == 429
+            else "Apple Music API request failed"
+        )
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+    return recently_added
