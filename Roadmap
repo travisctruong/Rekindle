@@ -12,11 +12,11 @@
                 ↓
        React Rekindle screen
                 ↓
-    ★ Music player (adds to rekindle count) + Genre-specific playlists + Recently added 
+       Music player + Genre-specific playlists + Recently added 
                 ↓
-       Track user activity (favouriting rekindles, won't show up again) + Connecting Apple Music Bug
+       ★ Track user activity (favouriting rekindles, won't show up again) + Rekindle playlist generation
                 ↓
-       Music library explorer (most rekindled) + Playlist migration (favourite all function)
+       Music library explorer (most rekindled) + Playlist migration (favourite all function) + music (adds to rekindle count)
                 ↓
        Statistics & analytics (find more stats to start tracking)
                 ↓

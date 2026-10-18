@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import Sidebar from '../components/Sidebar';
 import Statcard from '../components/Statcard';
 
 function formatDateTime(value) {
@@ -117,10 +116,7 @@ function Home() {
     const lastSyncedFormatted = lastSynced ? formatDateTime(lastSynced) : '...'
 
     return (
-        <div className='layout'>
-            <Sidebar />
-
-            <div className="body">
+        <div className="body">
                 <h1>Welcome Travis!</h1>
 
                 <div className='statcard__container'>
@@ -132,8 +128,6 @@ function Home() {
                     <Statcard title="Top Genres" value={topGenres} />
                 </div>
                 <Statcard title="Recently Added to Library" value={recentlyAddedItems} className="statcard--recently-added" />
-
-            </div>
         </div>
     );
 }
