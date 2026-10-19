@@ -155,6 +155,7 @@ class AppleMusicService:
                             first_synced_at=first_synced_at,
                             last_rekindled_at=None,
                             rekindle_count=0,
+                            favourite=False,
                         )
                         for song in new_songs
                     ]

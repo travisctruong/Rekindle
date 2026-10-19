@@ -14,20 +14,7 @@ class RekindleService:
         self.db = db
 
     def _rekindle_songs(self, songs: list[Song]) -> list[dict]:
-        response = [
-            {
-                "id": song.id,
-                "user_id": song.user_id,
-                "apple_music_id": song.apple_music_id,
-                "title": song.title,
-                "artist": song.artist,
-                "album": song.album,
-                "genres": song.genres,
-                "artwork": song.artwork,
-            }
-            for song in songs
-        ]
-
+        rekindle_by_song_id = {}
         for song in songs:
             song_rekindle = self.db.scalar(
                 select(Rekindle).where(Rekindle.song_id == song.id)
@@ -38,8 +25,24 @@ class RekindleService:
                     f"Missing Rekindle record for song id {song.id}"
                 )
 
+            rekindle_by_song_id[song.id] = song_rekindle
             song_rekindle.rekindle_count += 1
             song_rekindle.last_rekindled_at = datetime.now(timezone.utc)
+
+        response = [
+            {
+                "id": song.id,
+                "user_id": song.user_id,
+                "apple_music_id": song.apple_music_id,
+                "title": song.title,
+                "artist": song.artist,
+                "album": song.album,
+                "genres": song.genres,
+                "artwork": song.artwork,
+                "favourite": rekindle_by_song_id[song.id].favourite,
+            }
+            for song in songs
+        ]
 
         self.db.commit()
         return response
@@ -50,7 +53,11 @@ class RekindleService:
         """
         try:
             songs = self.db.scalars(
-                select(Song).order_by(func.random()).limit(10)
+                select(Song)
+                .join(Rekindle, Rekindle.song_id == Song.id)
+                .where(Rekindle.favourite.is_(False))
+                .order_by(func.random())
+                .limit(10)
             ).all()
             return self._rekindle_songs(songs)
 
@@ -66,7 +73,11 @@ class RekindleService:
             genre = genre.strip()
             songs = [
                 song
-                for song in self.db.scalars(select(Song)).all()
+                for song in self.db.scalars(
+                    select(Song)
+                    .join(Rekindle, Rekindle.song_id == Song.id)
+                    .where(Rekindle.favourite.is_(False))
+                ).all()
                 if genre in parse_genres(song.genres)
             ]
             return self._rekindle_songs(random.sample(songs, min(10, len(songs))))

@@ -130,7 +130,15 @@
     transform: translate(-50%, -50%);
 }
 
+.rekindle-list-button__container .rekindle-favourite-button[aria-pressed="true"] {
+    color: #ef4444;
+}
+
 .rekindle-list-button__container button:hover:not(:disabled) {
     color: var(--color-accent);
     cursor: pointer;
+}
+
+.rekindle-list-button__container .rekindle-favourite-button[aria-pressed="true"]:hover:not(:disabled) {
+    color: #dc2626;
 }

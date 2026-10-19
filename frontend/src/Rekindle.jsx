@@ -23,6 +23,110 @@ async function fetchLastSynced() {
     return response.json()
 }
 
+function CreatePlaylistButton({ songs }) {
+    const [isOpen, setIsOpen] = useState(false)
+    const [playlistName, setPlaylistName] = useState('')
+    const [isCreating, setIsCreating] = useState(false)
+    const [error, setError] = useState('')
+    const [success, setSuccess] = useState('')
+
+    async function handleSubmit(event) {
+        event.preventDefault()
+        setIsCreating(true)
+        setError('')
+        setSuccess('')
+
+        try {
+            const response = await fetch('http://localhost:8000/api/songs/create-playlist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    playlist_name: playlistName,
+                    song_ids: songs.map((song) => song.id),
+                    timezone_offset_minutes: new Date().getTimezoneOffset(),
+                    timezone_name: new Intl.DateTimeFormat('en-US', {
+                        timeZoneName: 'short',
+                    }).formatToParts(new Date()).find((part) => part.type === 'timeZoneName')?.value
+                        || Intl.DateTimeFormat().resolvedOptions().timeZone,
+                }),
+            })
+            const result = await response.json()
+            if (!response.ok) {
+                throw new Error(result.detail || 'Failed to create playlist')
+            }
+
+            setSuccess(`Created "${result.name}" in Apple Music.`)
+        } catch (requestError) {
+            setError(requestError instanceof Error ? requestError.message : 'Failed to create playlist')
+        } finally {
+            setIsCreating(false)
+        }
+    }
+
+    if (songs.length === 0) {
+        return null
+    }
+
+    return (
+        <>
+            <button
+                que-icon="download"
+                className="global__service__button"
+                type="button"
+                onClick={() => {
+                    setError('')
+                    setSuccess('')
+                    setIsOpen(true)
+                }}
+                disabled={songs.length !== 10}
+            >
+                Save as Playlist
+            </button>
+            {isOpen && (
+                <div className="rekindle-playlist-overlay">
+                    <section
+                        aria-labelledby="rekindle-playlist-title"
+                        aria-modal="true"
+                        className="statcard rekindle-playlist-dialog"
+                        role="dialog"
+                    >
+                        <button
+                            aria-label="Close playlist form"
+                            className="rekindle-playlist-dialog__close"
+                            type="button"
+                            onClick={() => setIsOpen(false)}
+                            disabled={isCreating}
+                        >
+                            ×
+                        </button>
+                        <h2 className="statcard__title" id="rekindle-playlist-title">
+                            Create a playlist
+                        </h2>
+                        <form onSubmit={handleSubmit}>
+                            <label htmlFor="rekindle-playlist-name">Playlist name</label>
+                            <input
+                                autoFocus
+                                id="rekindle-playlist-name"
+                                maxLength={255}
+                                onChange={(event) => setPlaylistName(event.target.value)}
+                                required
+                                disabled={Boolean(success)}
+                                value={playlistName}
+                            />
+                            {error && <p role="alert">{error}</p>}
+                            <button type="submit" disabled={isCreating || Boolean(success) || !playlistName.trim()}>
+                                {isCreating ? 'Creating...' : success ? 'Playlist Created!' : 'Create playlist'}
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            )}
+        </>
+    )
+}
+
 function Rekindle() {
     const navigate = useNavigate()
 
@@ -118,26 +222,28 @@ function RekindleSelect() {
             {error && <p role="alert">{error}</p>}
             <div className="rekindle-genre-grid">
                 {popularGenres.map(([genre, count], index) => (
-                    <button
-                        className="statcard rekindle-genre-card"
-                        key={genre}
-                        type="button"
-                        onClick={() => navigate(`/rekindle/genre/results?genre=${encodeURIComponent(genre)}`)}
-                        style={{ animationDelay: `${index * 70}ms` }}
-                    >
-                        {genreArtwork[genre] && (
-                            <img
-                                className="rekindle-genre-card__artwork"
-                                src={genreArtwork[genre].replace('{w}', '160').replace('{h}', '160')}
-                                alt=""
-                                loading="lazy"
-                            />
-                        )}
-                        <span className="rekindle-genre-card__details">
-                            <span className="statcard__title">{genre}</span>
-                            <span className="statcard__value">{count}</span>
-                        </span>
-                    </button>
+                    <section>
+                        <button
+                            className="statcard rekindle-genre-card"
+                            key={genre}
+                            type="button"
+                            onClick={() => navigate(`/rekindle/genre/results?genre=${encodeURIComponent(genre)}`)}
+                            style={{ animationDelay: `${index * 70}ms` }}
+                        >
+                            {genreArtwork[genre] && (
+                                <img
+                                    className="rekindle-genre-card__artwork"
+                                    src={genreArtwork[genre].replace('{w}', '160').replace('{h}', '160')}
+                                    alt=""
+                                    loading="lazy"
+                                />
+                            )}
+                            <span className="rekindle-genre-card__details">
+                                <span className="statcard__title">{genre}</span>
+                                <span className="statcard__value">{count}</span>
+                            </span>
+                        </button>
+                    </section>
                 ))}
             </div>
         </div>
@@ -219,6 +325,7 @@ function RekindleAll({ onPlaySongs }) {
                 </span>
                 {error && <p role="alert">{error}</p>}
                 <RekindleList songs={songs} onPlaySongs={onPlaySongs} />
+                <CreatePlaylistButton songs={songs} />
             </div>
         </div>
     );
@@ -319,6 +426,7 @@ function RekindleGenre({ onPlaySongs }) {
                 </span>
                 {error && <p role="alert">{error}</p>}
                 <RekindleList songs={songs} onPlaySongs={onPlaySongs} />
+                <CreatePlaylistButton songs={songs} />
             </div>
         </div>
     )

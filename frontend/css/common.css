@@ -71,3 +71,18 @@ body {
         cursor: pointer;
     }
 }
+
+.global__service__button {
+    min-width: 200px;
+    min-height: 50px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background-color: var(--color-accent);
+    cursor: pointer;
+    transition: 0.3s;
+
+    &:hover {
+        transform: translateY(-3px);
+    }
+}
+

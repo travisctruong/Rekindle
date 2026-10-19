@@ -1,16 +1,99 @@
 import random
+from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, Query
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from backend.validators.playlist_validator import PlaylistValidation
 from database.database import get_db
 from models.song import Song
 
+from apple_music.auth import generate_developer_token
+from routes import apple_music
 from services.genres import parse_genres
 from services.rekindle import RekindleService
 
 
 router = APIRouter(prefix="/api/songs")
+
+
+@router.post("/create-playlist")
+async def create_playlist(data: PlaylistValidation, db: Session = Depends(get_db)):
+    """
+    Create an Apple Music playlist from ten Rekindle recommendations.
+    """
+    if not apple_music.music_user_token:
+        raise HTTPException(status_code=400, detail="Connect Apple Music first")
+
+    songs_by_id = {
+        song.id: song
+        for song in db.query(Song).filter(Song.id.in_(data.song_ids)).all()
+    }
+    if len(songs_by_id) != len(data.song_ids):
+        raise HTTPException(
+            status_code=400,
+            detail="One or more playlist songs could not be found",
+        )
+
+    headers = {
+        "Authorization": f"Bearer {generate_developer_token()}",
+        "Music-User-Token": apple_music.music_user_token,
+    }
+    user_timezone = timezone(timedelta(minutes=-data.timezone_offset_minutes))
+    rekindled_at = datetime.now(user_timezone)
+    time_text = f"{rekindled_at.hour % 12 or 12}:{rekindled_at:%M}{'am' if rekindled_at.hour < 12 else 'pm'}"
+    payload = {
+        "attributes": {
+            "name": data.playlist_name,
+            "description": (
+                f"Rekindled: {rekindled_at:%B}, {rekindled_at.day} @ "
+                f"{time_text} {data.timezone_name}"
+            ),
+        },
+        "relationships": {
+            "tracks": {
+                "data": [
+                    {"id": songs_by_id[song_id].apple_music_id, "type": "library-songs"}
+                    for song_id in data.song_ids
+                ]
+            }
+        },
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0)) as client:
+            response = await client.post(
+                "https://api.music.apple.com/v1/me/library/playlists",
+                headers=headers,
+                json=payload,
+            )
+            response.raise_for_status()
+    except httpx.TimeoutException as exc:
+        raise HTTPException(
+            status_code=504,
+            detail="Apple Music API timed out; retry the request later",
+        ) from exc
+    except httpx.HTTPStatusError as exc:
+        status_code = 429 if exc.response.status_code == 429 else 502
+        detail = (
+            "Apple Music rate limit reached; retry the request later"
+            if status_code == 429
+            else "Apple Music failed to create the playlist"
+        )
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+
+    try:
+        playlist = response.json()["data"][0]
+        return {
+            "id": playlist["id"],
+            "name": playlist["attributes"]["name"],
+        }
+    except (KeyError, IndexError, TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Apple Music returned an invalid playlist response",
+        ) from exc
 
 
 @router.get("/")

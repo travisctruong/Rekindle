@@ -121,6 +121,14 @@ header {
     width: min(100%, 720px);
     max-width: 100%;
     margin-inline: auto;
+
+    & > section {
+        transition: 0.3s;
+
+        &:hover {
+            transform: translateY(-5px);
+        }
+    }
 }
 
 .rekindle-genre-card {
@@ -204,5 +212,110 @@ header {
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.18);
     background-color: var(--color-accent);
+    cursor: pointer;
+    transition: 0.3s;
 
+    &:hover {
+        transform: translateY(-3px);
+    }
+}
+
+.rekindle-playlist-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(2, 6, 23, 0.55);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+    animation: rekindle-playlist-overlay-in 180ms ease-out both;
+}
+
+.rekindle-playlist-dialog {
+    position: relative;
+    box-sizing: border-box;
+    width: min(100%, 420px);
+    padding: 2rem;
+    margin: 0;
+    animation: rekindle-playlist-dialog-in 220ms ease-out both;
+}
+
+@keyframes rekindle-playlist-overlay-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes rekindle-playlist-dialog-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rekindle-playlist-overlay,
+    .rekindle-playlist-dialog {
+        animation: none;
+    }
+}
+
+.rekindle-playlist-dialog__close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    border: 0;
+    color: #cbd5e1;
+    background: transparent;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.rekindle-playlist-dialog form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.rekindle-playlist-dialog label {
+    color: #cbd5e1;
+    font-size: 0.875rem;
+}
+
+.rekindle-playlist-dialog input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    border-radius: 8px;
+    color: #f1f5f9;
+    background: rgba(15, 23, 42, 0.75);
+    font: inherit;
+    outline: none;
+}
+
+.rekindle-playlist-dialog form button {
+    min-height: 44px;
+    border: 0;
+    border-radius: 8px;
+    color: #fff;
+    background: var(--color-accent);
+    font: inherit;
+    cursor: pointer;
+}
+
+.rekindle-playlist-dialog form button:disabled {
+    opacity: 0.65;
 }
