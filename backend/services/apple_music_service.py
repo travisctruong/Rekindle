@@ -172,24 +172,106 @@ class AppleMusicService:
     async def fetch_recently_added(
         self, music_user_token: str
     ) -> dict[str, dict]:
-            headers = {
-                "Authorization": f"Bearer {generate_developer_token()}",
-                "Music-User-Token": music_user_token,
-            }
-            url = "https://api.music.apple.com/v1/me/library/recently-added?limit=10"
-            timeout = httpx.Timeout(30.0, connect=10.0)
-            albums_by_id = {}
+        headers = {
+            "Authorization": f"Bearer {generate_developer_token()}",
+            "Music-User-Token": music_user_token,
+        }
+        url = "https://api.music.apple.com/v1/me/library/recently-added?limit=10"
+        timeout = httpx.Timeout(30.0, connect=10.0)
+        albums_by_id = {}
 
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                while url and len(albums_by_id) < 10:
-                    payload = await self._fetch_library_page(client, url, headers)
-                    for item in payload.get("data", []):
-                        if item.get("type") == "library-albums":
-                            albums_by_id[item["id"]] = item.get("attributes", {})
-                            if len(albums_by_id) == 10:
-                                break
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            while url and len(albums_by_id) < 10:
+                payload = await self._fetch_library_page(client, url, headers)
+                for item in payload.get("data", []):
+                    if item.get("type") == "library-albums":
+                        albums_by_id[item["id"]] = item.get("attributes", {})
+                        if len(albums_by_id) == 10:
+                            break
 
-                    next_url = payload.get("next")
-                    url = urljoin(url, next_url) if next_url else ""
+                next_url = payload.get("next")
+                url = urljoin(url, next_url) if next_url else ""
 
-            return albums_by_id
+        return albums_by_id
+
+    async def fetch_user_playlists(
+        self, music_user_token: str
+    ) -> dict[str, dict]:
+        headers = {
+            "Authorization": f"Bearer {generate_developer_token()}",
+            "Music-User-Token": music_user_token,
+        }
+        url = "https://api.music.apple.com/v1/me/library/playlists"
+        timeout = httpx.Timeout(30.0, connect=10.0)
+        playlists_by_id = {}
+
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            while url:
+                payload = await self._fetch_library_page(client, url, headers)
+                for item in payload.get("data", []):
+                    attributes = item.get("attributes", {})
+                    if item.get("type") == "library-playlists" and attributes.get("canEdit") is True:
+                        playlists_by_id[item["id"]] = attributes
+                next_url = payload.get("next")
+                url = urljoin(url, next_url) if next_url else ""
+
+        return playlists_by_id
+
+    async def fetch_apple_playlists(
+        self, music_user_token: str
+    ) -> dict[str, dict]:
+        headers = {
+            "Authorization": f"Bearer {generate_developer_token()}",
+            "Music-User-Token": music_user_token,
+        }
+        url = "https://api.music.apple.com/v1/me/library/playlists"
+        timeout = httpx.Timeout(30.0, connect=10.0)
+        playlists_by_id = {}
+
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            while url:
+                payload = await self._fetch_library_page(client, url, headers)
+                for item in payload.get("data", []):
+                    attributes = item.get("attributes", {})
+                    if item.get("type") == "library-playlists" and attributes.get("canEdit") is False:
+                        playlists_by_id[item["id"]] = attributes
+                next_url = payload.get("next")
+                url = urljoin(url, next_url) if next_url else ""
+
+        return playlists_by_id
+
+    async def fetch_playlist_data(
+        self, music_user_token: str, playlist_id: str
+    ) -> dict[str, dict]:
+        headers = {
+            "Authorization": f"Bearer {generate_developer_token()}",
+            "Music-User-Token": music_user_token,
+        }
+        url = f"https://api.music.apple.com/v1/me/library/playlists/{playlist_id}/tracks"
+        timeout = httpx.Timeout(30.0, connect=10.0)
+        tracks_by_id = {}
+
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            while url:
+                payload = await self._fetch_library_page(client, url, headers)
+                for item in payload.get("data", []):
+                    attributes = item.get("attributes", {})
+                    tracks_by_id[item["id"]] = attributes
+                next_url = payload.get("next")
+                url = urljoin(url, next_url) if next_url else ""
+
+        user = self.db.scalar(select(User).where(User.user_token == music_user_token))
+        if user is not None and tracks_by_id:
+            saved_tracks = self.db.execute(
+                select(Song.apple_music_id, Song.id, Rekindle.favourite)
+                .join(Rekindle, Rekindle.song_id == Song.id)
+                .where(
+                    Song.user_id == user.id,
+                    Song.apple_music_id.in_(tracks_by_id),
+                )
+            )
+            for apple_music_id, song_id, favourite in saved_tracks:
+                tracks_by_id[apple_music_id]["songId"] = song_id
+                tracks_by_id[apple_music_id]["favourite"] = favourite
+
+        return tracks_by_id

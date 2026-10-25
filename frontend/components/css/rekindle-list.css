@@ -72,6 +72,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    flex: 1;
     min-width: 0;
 }
 
@@ -99,6 +100,24 @@
 .rekindle-list__details span {
     color: #cbd5e1;
     font-size: 0.875rem;
+}
+
+.rekindle-list__album {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: #cbd5e1;
+    font-size: 0.875rem;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rekindle-list__duration {
+    flex: 0 0 auto;
+    color: #cbd5e1;
+    font-size: 0.875rem;
+    white-space: nowrap;
 }
 
 .rekindle-list-button__container {

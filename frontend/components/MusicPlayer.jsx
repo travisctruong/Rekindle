@@ -23,6 +23,26 @@ function getArtworkUrl(artwork) {
     return artwork.replace('{w}', '96').replace('{h}', '96')
 }
 
+async function recordPlayedSong(song, music) {
+    if (music.playbackState !== window.MusicKit?.PlaybackStates?.playing) {
+        return
+    }
+
+    const songId = Object.prototype.hasOwnProperty.call(song, 'rekindle_song_id')
+        ? song.rekindle_song_id
+        : song.id
+    if (!Number.isInteger(songId)) {
+        return
+    }
+
+    const response = await fetch(`http://localhost:8000/api/rekindle/${songId}/played`, {
+        method: 'POST',
+    })
+    if (!response.ok) {
+        throw new Error(`Failed to record song playback (${response.status})`)
+    }
+}
+
 function MusicPlayer({ music, isConnected, queue = [], startIndex, playRequest }) {
     const [currentIndex, setCurrentIndex] = useState(0)
     const [currentTime, setCurrentTime] = useState(0)
@@ -51,8 +71,10 @@ function MusicPlayer({ music, isConnected, queue = [], startIndex, playRequest }
             await music.setQueue({ song: selectedSong.apple_music_id })
             await music.play()
             setIsPlaying(true)
+            void recordPlayedSong(selectedSong, music).catch((recordingError) => {
+                setError(recordingError instanceof Error ? recordingError.message : 'Failed to record song playback.')
+            })
         } catch (playbackError) {
-            setIsPlaying(false)
             setError(playbackError instanceof Error ? playbackError.message : 'Unable to play this track.')
         } finally {
             setIsLoading(false)
@@ -111,6 +133,9 @@ function MusicPlayer({ music, isConnected, queue = [], startIndex, playRequest }
                 await music.setQueue({ song: song.apple_music_id })
                 await music.play()
                 setIsPlaying(true)
+                void recordPlayedSong(song, music).catch((recordingError) => {
+                    setError(recordingError instanceof Error ? recordingError.message : 'Failed to record song playback.')
+                })
             }
         } catch (playbackError) {
             setError(playbackError instanceof Error ? playbackError.message : 'Unable to control playback.')
