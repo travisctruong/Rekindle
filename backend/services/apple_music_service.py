@@ -1,12 +1,14 @@
 import asyncio
 from datetime import datetime, timezone
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin
 
 import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from apple_music.auth import generate_developer_token
+from models.playlist import Playlist
+from models.playlist_song import PlaylistSong
 from models.rekindle import Rekindle
 from models.song import Song
 from models.user import User
@@ -169,6 +171,125 @@ class AppleMusicService:
 
         return len(songs_by_id)
 
+    async def fetch_and_store_playlists(self, music_user_token: str) -> int:
+        headers = {
+            "Authorization": f"Bearer {generate_developer_token()}",
+            "Music-User-Token": music_user_token,
+        }
+        url = "https://api.music.apple.com/v1/me/library/playlists"
+        timeout = httpx.Timeout(30.0, connect=10.0)
+        playlists_by_id = {}
+
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            while url:
+                payload = await self._fetch_library_page(client, url, headers)
+                for item in payload.get("data", []):
+                    if item.get("type") == "library-playlists":
+                        playlists_by_id[item["id"]] = item.get("attributes", {})
+                next_url = payload.get("next")
+                url = urljoin(url, next_url) if next_url else ""
+
+            tracks_by_playlist_id = {}
+            for playlist_id in playlists_by_id:
+                tracks_url = (
+                    "https://api.music.apple.com/v1/me/library/playlists/"
+                    f"{quote(playlist_id, safe='')}/tracks"
+                )
+                tracks_by_id = {}
+                while tracks_url:
+                    payload = await self._fetch_library_page(client, tracks_url, headers)
+                    for item in payload.get("data", []):
+                        tracks_by_id[item["id"]] = item.get("attributes", {})
+                    next_url = payload.get("next")
+                    tracks_url = urljoin(tracks_url, next_url) if next_url else ""
+                tracks_by_playlist_id[playlist_id] = tracks_by_id
+
+        try:
+            user = self.db.scalar(
+                select(User).where(User.user_token == music_user_token)
+            )
+            if user is None:
+                user = User(user_token=music_user_token, name="Test User")
+                self.db.add(user)
+                self.db.flush()
+
+            existing_playlists = self.db.scalars(
+                select(Playlist).where(Playlist.user_id == user.id)
+            ).all()
+            playlists_by_apple_id = {
+                playlist.apple_music_id: playlist
+                for playlist in existing_playlists
+            }
+
+            for apple_music_id, attributes in playlists_by_id.items():
+                playlist = playlists_by_apple_id.get(apple_music_id)
+                if playlist is None:
+                    playlist = Playlist(
+                        user_id=user.id,
+                        apple_music_id=apple_music_id,
+                        name="",
+                    )
+                    self.db.add(playlist)
+                    playlists_by_apple_id[apple_music_id] = playlist
+
+                description = attributes.get("description")
+                if isinstance(description, dict):
+                    description = description.get("standard")
+
+                artwork = attributes.get("artwork")
+                playlist.name = attributes.get("name") or ""
+                playlist.description = description
+                playlist.artwork = (
+                    artwork.get("url") if isinstance(artwork, dict) else None
+                )
+                playlist.date_added = self._parse_timestamp(attributes.get("dateAdded"))
+                playlist.can_edit = attributes.get("canEdit") is True
+                playlist.is_public = attributes.get("isPublic") is True
+
+            self.db.flush()
+
+            for apple_music_id in playlists_by_id:
+                playlist = playlists_by_apple_id[apple_music_id]
+                existing_tracks = self.db.scalars(
+                    select(PlaylistSong).where(
+                        PlaylistSong.playlist_id == playlist.id
+                    )
+                ).all()
+                tracks_by_apple_id = {
+                    track.apple_music_id: track for track in existing_tracks
+                }
+
+                for track_id, track_attributes in tracks_by_playlist_id[apple_music_id].items():
+                    track = tracks_by_apple_id.get(track_id)
+                    if track is None:
+                        track = PlaylistSong(
+                            playlist_id=playlist.id,
+                            apple_music_id=track_id,
+                            title="",
+                            artist="",
+                            album="",
+                        )
+                        self.db.add(track)
+
+                    genres = track_attributes.get("genreNames")
+                    artwork = track_attributes.get("artwork")
+                    duration = track_attributes.get("durationInMillis")
+                    track.title = track_attributes.get("name") or ""
+                    track.artist = track_attributes.get("artistName") or ""
+                    track.album = track_attributes.get("albumName") or ""
+                    track.genres = ", ".join(genres) if isinstance(genres, list) else genres
+                    track.artwork = (
+                        artwork.get("url") if isinstance(artwork, dict) else None
+                    )
+                    track.duration = duration if isinstance(duration, int) else None
+
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+
+        return len(playlists_by_id)
+
     async def fetch_recently_added(
         self, music_user_token: str
     ) -> dict[str, dict]:
@@ -193,52 +314,6 @@ class AppleMusicService:
                 url = urljoin(url, next_url) if next_url else ""
 
         return albums_by_id
-
-    async def fetch_user_playlists(
-        self, music_user_token: str
-    ) -> dict[str, dict]:
-        headers = {
-            "Authorization": f"Bearer {generate_developer_token()}",
-            "Music-User-Token": music_user_token,
-        }
-        url = "https://api.music.apple.com/v1/me/library/playlists"
-        timeout = httpx.Timeout(30.0, connect=10.0)
-        playlists_by_id = {}
-
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            while url:
-                payload = await self._fetch_library_page(client, url, headers)
-                for item in payload.get("data", []):
-                    attributes = item.get("attributes", {})
-                    if item.get("type") == "library-playlists" and attributes.get("canEdit") is True:
-                        playlists_by_id[item["id"]] = attributes
-                next_url = payload.get("next")
-                url = urljoin(url, next_url) if next_url else ""
-
-        return playlists_by_id
-
-    async def fetch_apple_playlists(
-        self, music_user_token: str
-    ) -> dict[str, dict]:
-        headers = {
-            "Authorization": f"Bearer {generate_developer_token()}",
-            "Music-User-Token": music_user_token,
-        }
-        url = "https://api.music.apple.com/v1/me/library/playlists"
-        timeout = httpx.Timeout(30.0, connect=10.0)
-        playlists_by_id = {}
-
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            while url:
-                payload = await self._fetch_library_page(client, url, headers)
-                for item in payload.get("data", []):
-                    attributes = item.get("attributes", {})
-                    if item.get("type") == "library-playlists" and attributes.get("canEdit") is False:
-                        playlists_by_id[item["id"]] = attributes
-                next_url = payload.get("next")
-                url = urljoin(url, next_url) if next_url else ""
-
-        return playlists_by_id
 
     async def fetch_playlist_data(
         self, music_user_token: str, playlist_id: str

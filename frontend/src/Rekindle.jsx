@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import FeatureCard, { FeatureCardGroup } from '../components/FeatureCard'
 import RekindleList from '../components/RekindleList'
 import '../css/rekindle.css'
 
@@ -137,33 +138,24 @@ function Rekindle() {
                 <p>Rediscover the music you already love</p>
             </header>
 
-            <div className='rekindle-type__container'>
-                <section className='rekindle-type-section rekindle-all'>
-                    <span que-icon="music_note" aria-hidden="true"></span>
-                    <strong>Rekindle All</strong>
-                    <span>Get 10 songs from your entire library that you haven't heard in a while</span>
-                    <button
-                        type="button"
-                        que-icon="arrow_forward_ios"
-                        className='rekindle-direct__button'
-                        aria-label="Open Rekindle All"
-                        onClick={() => navigate('/rekindle/all')}
-                    ></button>
-                </section>
-
-                <section className='rekindle-type-section rekindle-genre'>
-                    <span que-icon="tune" aria-hidden="true"></span>
-                    <strong>Rekindle by Genre</strong>
-                    <span>Choose one of your favourite genres and get 10 songs from your library that you haven't heard in a while</span>
-                    <button
-                        type="button"
-                        que-icon="arrow_forward_ios"
-                        className='rekindle-direct__button'
-                        aria-label="Open Rekindle by Genre"
-                        onClick={() => navigate('/rekindle/genre')}
-                    ></button>
-                </section>
-            </div>
+            <FeatureCardGroup>
+                <FeatureCard
+                    icon="music_note"
+                    title="Rekindle All"
+                    description="Get 10 songs from your entire library that you haven't heard in a while"
+                    backgroundImage="/images/image1.jpg"
+                    ariaLabel="Open Rekindle All"
+                    onClick={() => navigate('/rekindle/all')}
+                />
+                <FeatureCard
+                    icon="tune"
+                    title="Rekindle by Genre"
+                    description="Choose one of your favourite genres and get 10 songs from your library that you haven't heard in a while"
+                    backgroundImage="/images/image2.jpg"
+                    ariaLabel="Open Rekindle by Genre"
+                    onClick={() => navigate('/rekindle/genre')}
+                />
+            </FeatureCardGroup>
         </div>
     );
 }

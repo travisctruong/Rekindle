@@ -5,7 +5,7 @@ import MusicPlayer from '../components/MusicPlayer'
 import Sidebar from '../components/Sidebar'
 import Home from './Home'
 import Rekindle, { RekindleAll, RekindleGenre, RekindleSelect } from './Rekindle'
-import Library from './Library'
+import Library, { ApplePlaylists, UserPlaylists } from './Library'
 import Playlist from './Playlist'
 
 let musicKitPromise
@@ -117,6 +117,8 @@ function App() {
                         <Route path="/rekindle/genre" element={<RekindleSelect />} />
                         <Route path="/rekindle/genre/results" element={<RekindleGenre onPlaySongs={playSongs} />} />
                         <Route path="/library" element={<Library />} />
+                        <Route path="/playlists/users" element={<UserPlaylists />} />
+                        <Route path="/playlists/apple" element={<ApplePlaylists />} />
                         <Route path="/playlist/:playlistId" element={<Playlist onPlaySongs={playSongs} />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>

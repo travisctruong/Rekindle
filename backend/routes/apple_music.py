@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database.database import get_db
@@ -6,6 +6,7 @@ import httpx
 
 from apple_music.auth import generate_developer_token
 from services.apple_music_service import AppleMusicService
+from services.playlists import fetch_apple_playlists, fetch_user_playlists
 
 
 router = APIRouter(prefix="/api/apple-music")
@@ -58,12 +59,38 @@ def connect_apple_music(data: MusicUserToken):
 @router.get("/songs")
 async def get_apple_music_songs(db: Session = Depends(get_db)):
     """
-    Grab User's music
+    Grab User's music from Apple Music API
     """
     if not music_user_token:
         raise HTTPException(status_code=400, detail="Connect Apple Music first")
     try:
         count = await AppleMusicService(db).fetch_and_store_songs(
+            music_user_token=music_user_token,
+        )
+    except httpx.TimeoutException as exc:
+        raise HTTPException(
+            status_code=504,
+            detail="Apple Music API timed out; retry the request later",
+        ) from exc
+    except httpx.HTTPStatusError as exc:
+        status_code = 429 if exc.response.status_code == 429 else 502
+        detail = (
+            "Apple Music rate limit reached; retry the request later"
+            if status_code == 429
+            else "Apple Music API request failed"
+        )
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+    return {"stored": count}
+
+@router.get("/playlists")
+async def get_apple_music_playlists(db: Session = Depends(get_db)):
+    """
+    Grab User's playlists from Apple Music API
+    """
+    if not music_user_token:
+        raise HTTPException(status_code=400, detail="Connect Apple Music first")
+    try:
+        count = await AppleMusicService(db).fetch_and_store_playlists(
             music_user_token=music_user_token,
         )
     except httpx.TimeoutException as exc:
@@ -108,55 +135,37 @@ async def get_recently_added(db: Session = Depends(get_db)):
     return recently_added
 
 @router.get("/user-playlists")
-async def get_user_playlists(db: Session = Depends(get_db)):
+async def get_user_playlists(
+    all_playlists: bool = Query(False, alias="all"),
+    db: Session = Depends(get_db),
+):
     """
     Get all of the user's playlists
     """
     if not music_user_token:
         raise HTTPException(status_code=400, detail="Connect Apple Music first")
-    try:
-        user_playlists = await AppleMusicService(db).fetch_user_playlists(
-            music_user_token=music_user_token,
-        )
-    except httpx.TimeoutException as exc:
-        raise HTTPException(
-            status_code=504,
-            detail="Apple Music API timed out; retry the request later",
-        ) from exc
-    except httpx.HTTPStatusError as exc:
-        status_code = 429 if exc.response.status_code == 429 else 502
-        detail = (
-            "Apple Music rate limit reached; retry the request later"
-            if status_code == 429
-            else "Apple Music API request failed"
-        )
-        raise HTTPException(status_code=status_code, detail=detail) from exc
+    user_playlists = fetch_user_playlists(
+        db=db,
+        music_user_token=music_user_token,
+        limit=None if all_playlists else 6,
+    )
     return user_playlists
 
 @router.get("/apple-playlists")
-async def get_apple_playlists(db: Session = Depends(get_db)):
+async def get_apple_playlists(
+    all_playlists: bool = Query(False, alias="all"),
+    db: Session = Depends(get_db),
+):
     """
     Get all of the user's saved Apple Music playlists
     """
     if not music_user_token:
         raise HTTPException(status_code=400, detail="Connect Apple Music first")
-    try:
-        apple_playlists = await AppleMusicService(db).fetch_apple_playlists(
-            music_user_token=music_user_token,
-        )
-    except httpx.TimeoutException as exc:
-        raise HTTPException(
-            status_code=504,
-            detail="Apple Music API timed out; retry the request later",
-        ) from exc
-    except httpx.HTTPStatusError as exc:
-        status_code = 429 if exc.response.status_code == 429 else 502
-        detail = (
-            "Apple Music rate limit reached; retry the request later"
-            if status_code == 429
-            else "Apple Music API request failed"
-        )
-        raise HTTPException(status_code=status_code, detail=detail) from exc
+    apple_playlists = fetch_apple_playlists(
+        db=db,
+        music_user_token=music_user_token,
+        limit=None if all_playlists else 6,
+    )
     return apple_playlists
 
 @router.get("/playlist-data/{id}")

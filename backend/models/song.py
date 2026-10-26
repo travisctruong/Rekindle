@@ -17,3 +17,4 @@ class Song(Base):
     album: Mapped[str] = mapped_column(String)
     genres: Mapped[str] = mapped_column(String)
     artwork: Mapped[str] = mapped_column(String)
+    duration: Mapped[int] = mapped_column(Integer)

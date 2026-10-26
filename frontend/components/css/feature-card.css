@@ -1,0 +1,112 @@
+.feature-card-group {
+    display: flex;
+    flex-direction: row;
+    min-height: 60vh;
+    gap: 32px;
+    justify-content: center;
+    align-items: center;
+}
+
+.feature-card {
+    display: flex;
+    flex-direction: column;
+    animation: feature-card-pop-in 550ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    gap: var(--que__pad-xl);
+    box-sizing: border-box;
+    border-radius: 8px;
+    padding: var(--que__pad-xxl);
+    color: #fff;
+    width: 50%;
+    min-height: 400px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    transition: 0.3s;
+}
+
+.feature-card > strong {
+    font-size: 1.75rem;
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+}
+
+.feature-card__description {
+    width: 50%;
+    font-size: 1.125rem;
+    font-weight: 400;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.feature-card:hover {
+    transform: translateY(-3px);
+}
+
+.feature-card__icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 70px;
+    height: 70px;
+    padding: 0;
+    color: #fff;
+    backdrop-filter: blur(6px);
+    border-radius: 8px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55);
+}
+
+.feature-card__icon::before {
+    position: static;
+    transform: none;
+    font-size: 45px;
+    line-height: 1;
+}
+
+.feature-card__button {
+    position: relative;
+    display: grid;
+    place-items: center;
+    margin-top: auto;
+    margin-bottom: 16px;
+    align-self: flex-end;
+    color: #fff;
+    width: 54px;
+    height: 54px;
+    padding: 0;
+    font-size: 28px;
+    line-height: 1;
+    border-radius: 100%;
+    border: none;
+    background-color: var(--color-accent);
+    transition: background-color 0.3s ease, color 0.1s ease;
+}
+
+.feature-card__button::before {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.feature-card__button:hover {
+    cursor: pointer;
+    background-color: #3154bd;
+}
+
+@keyframes feature-card-pop-in {
+    from {
+        transform: translateY(18px) scale(0.94);
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .feature-card {
+        animation: none;
+    }
+}

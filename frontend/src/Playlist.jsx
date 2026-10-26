@@ -68,8 +68,7 @@ function Playlist({ onPlaySongs }) {
     const sizedArtworkUrl = artworkUrl
         ?.replace('{w}', '100')
         .replace('{h}', '100')
-    const playlistDescription1 = playlistDetail?.description
-    const playlistDescription = playlistDescription1?.standard
+    const playlistDescription = playlistDetail?.description
     const trackCount = Object.keys(playlistData).length
     const songs = Object.entries(playlistData).map(([id, track]) => ({
         id: track.songId ?? id,
