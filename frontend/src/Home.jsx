@@ -51,7 +51,7 @@ function Home() {
                     ['lastSynced', 'http://localhost:8000/api/rekindle/last-synced'],
                 ]
                 const counts = await Promise.all(endpoints.map(async ([name, url]) => {
-                    const response = await fetch(url)
+                    const response = await fetch(url, { credentials: 'include' })
                     if (!response.ok) {
                         throw new Error(`Failed to get ${name} count (${response.status})`)
                     }
@@ -79,6 +79,10 @@ function Home() {
         }
     }, [])
 
+    if (!error && songCount === null) {
+        return null
+    }
+
     // Formatting Top Genres Widget
     const topGenres = genreCount
         ? Object.entries(genreCount).map(([genre, count]) => `${genre} (${count})`).join(', ') || 'No genres'
@@ -97,6 +101,8 @@ function Home() {
                         const albumName = album.name || 'Unknown album'
                         const artistName = album.artistName || album.artist || 'Unknown artist'
                         const dateAdded = album.dateAdded ? formatDate(album.dateAdded) : 'Date added unavailable'
+                        const isNew = Boolean(album.dateAdded && lastSynced)
+                            && new Date(album.dateAdded) > new Date(lastSynced)
 
                         return (
                             <article className="recently-added__item" key={id}>
@@ -106,6 +112,7 @@ function Home() {
                                     <span className="recently-added__artist">{artistName}</span>
                                     <time className="recently-added__date">{dateAdded}</time>
                                 </div>
+                                {isNew && <span className="recently-added__badge">New</span>}
                             </article>
                         )
                     })}

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import AppleMusicConnect from '../components/AppleMusicConnect'
+// import AppleMusicConnect from '../components/AppleMusicConnect'
 import MusicPlayer from '../components/MusicPlayer'
 import Sidebar from '../components/Sidebar'
 import Home from './Home'
@@ -9,6 +9,7 @@ import Library, { ApplePlaylists, UserPlaylists } from './Library'
 import Playlist from './Playlist'
 
 let musicKitPromise
+let appleMusicRestorePromise
 
 function getMusicKit() {
     if (!musicKitPromise) {
@@ -41,14 +42,84 @@ function getMusicKit() {
     return musicKitPromise
 }
 
+async function registerAppleMusicToken(musicUserToken) {
+    const response = await fetch('http://localhost:8000/api/apple-music/connect', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ music_user_token: musicUserToken }),
+    })
+
+    if (!response.ok) {
+        const details = await response.json()
+        throw new Error(details.detail || 'Failed to connect Apple Music')
+    }
+}
+
+function restoreAppleMusicConnection() {
+    if (!appleMusicRestorePromise) {
+        appleMusicRestorePromise = (async () => {
+            const musicKit = await getMusicKit()
+            if (!musicKit.isAuthorized || !musicKit.musicUserToken) {
+                return null
+            }
+
+            const response = await fetch('http://localhost:8000/api/apple-music/status', {
+                credentials: 'include',
+            })
+            const { connected } = response.ok ? await response.json() : {}
+            if (!connected) {
+                await registerAppleMusicToken(musicKit.musicUserToken)
+            }
+            return musicKit
+        })().catch((error) => {
+            appleMusicRestorePromise = undefined
+            throw error
+        })
+    }
+
+    return appleMusicRestorePromise
+}
+
 function App() {
     const [isConnected, setIsConnected] = useState(false)
-    const [isConnecting, setIsConnecting] = useState(false)
+    const [isConnecting, setIsConnecting] = useState(true)
+    const [hasCheckedConnection, setHasCheckedConnection] = useState(false)
     const [connectionError, setConnectionError] = useState('')
     const [music, setMusic] = useState(null)
     const [playerQueue, setPlayerQueue] = useState([])
     const [playerStartIndex, setPlayerStartIndex] = useState(0)
     const [playRequest, setPlayRequest] = useState(0)
+
+    useEffect(() => {
+        let cancelled = false
+
+        async function restoreConnection() {
+            try {
+                const musicKit = await restoreAppleMusicConnection()
+                if (!cancelled && musicKit) {
+                    setMusic(musicKit)
+                    setIsConnected(true)
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    setConnectionError(error instanceof Error ? error.message : 'Failed to connect Apple Music')
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsConnecting(false)
+                    setHasCheckedConnection(true)
+                }
+            }
+        }
+
+        restoreConnection()
+        return () => {
+            cancelled = true
+        }
+    }, [])
 
     const connectAppleMusic = async () => {
         setConnectionError('')
@@ -65,18 +136,7 @@ function App() {
                 throw new Error('Apple Music authorization did not return a user token.')
             }
 
-            const response = await fetch('http://localhost:8000/api/apple-music/connect', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ music_user_token: musicUserToken }),
-            })
-
-            if (!response.ok) {
-                const details = await response.json()
-                throw new Error(details.detail || 'Failed to connect Apple Music')
-            }
+            await registerAppleMusicToken(musicUserToken)
 
             setMusic(musicKit)
             setIsConnected(true)
@@ -104,24 +164,26 @@ function App() {
             <div className="layout">
                 <Sidebar />
                 <main className="app-main">
-                    <AppleMusicConnect
+                    {/* <AppleMusicConnect
                         connected={isConnected}
                         isConnecting={isConnecting}
                         error={connectionError}
                         onConnect={connectAppleMusic}
-                    />
-                    <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/rekindle" element={<Rekindle />} />
-                        <Route path="/rekindle/all" element={<RekindleAll onPlaySongs={playSongs} />} />
-                        <Route path="/rekindle/genre" element={<RekindleSelect />} />
-                        <Route path="/rekindle/genre/results" element={<RekindleGenre onPlaySongs={playSongs} />} />
-                        <Route path="/library" element={<Library />} />
-                        <Route path="/playlists/users" element={<UserPlaylists />} />
-                        <Route path="/playlists/apple" element={<ApplePlaylists />} />
-                        <Route path="/playlist/:playlistId" element={<Playlist onPlaySongs={playSongs} />} />
-                        <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
+                    /> */}
+                    {hasCheckedConnection ? (
+                        <Routes>
+                            <Route path="/" element={<Home />} />
+                            <Route path="/rekindle" element={<Rekindle />} />
+                            <Route path="/rekindle/all" element={<RekindleAll onPlaySongs={playSongs} />} />
+                            <Route path="/rekindle/genre" element={<RekindleSelect />} />
+                            <Route path="/rekindle/genre/results" element={<RekindleGenre onPlaySongs={playSongs} />} />
+                            <Route path="/library" element={<Library />} />
+                            <Route path="/playlists/users" element={<UserPlaylists />} />
+                            <Route path="/playlists/apple" element={<ApplePlaylists />} />
+                            <Route path="/playlist/:playlistId" element={<Playlist onPlaySongs={playSongs} />} />
+                            <Route path="*" element={<Navigate to="/" replace />} />
+                        </Routes>
+                    ) : null}
                     <MusicPlayer
                         music={music}
                         isConnected={isConnected}

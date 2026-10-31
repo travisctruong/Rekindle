@@ -10,13 +10,17 @@
 
 .playlist-artwork {
     border-radius: 8px;
-    width: 400px;
-    height: 400px;
+    width: 300px;
+    height: 300px;
+    flex-shrink: 0;
+    margin-top: var(--que__pad-xl);
+    object-fit: cover;
 }
 
 .playlist-information {
     display: flex;
     flex-direction: column;
+    margin-top: var(--que__pad-xl);
 }
 
 .playlist-information__actions {

@@ -5,7 +5,7 @@ function Sidebar() {
     return (
         <aside className='sidebar'>
             <h2>
-                <a href='/'>Rekindle</a>
+                <a href='/'>REKINDLE</a>
             </h2>
             <nav className='sidebar__nav'>
                 <NavLink to="/">

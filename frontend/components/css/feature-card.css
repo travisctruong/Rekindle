@@ -4,7 +4,7 @@
     min-height: 60vh;
     gap: 32px;
     justify-content: center;
-    align-items: center;
+    align-items: stretch;
 }
 
 .feature-card {
@@ -16,9 +16,10 @@
     border-radius: 8px;
     padding: var(--que__pad-xxl);
     color: #fff;
-    width: 50%;
+    flex: 1 1 0;
+    min-width: 0;
     min-height: 400px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    /* border: 1px solid rgba(255, 255, 255, 0.18); */
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
@@ -92,7 +93,7 @@
 
 .feature-card__button:hover {
     cursor: pointer;
-    background-color: #3154bd;
+    background-color: rgba(0, 110, 248, 0.18);
 }
 
 @keyframes feature-card-pop-in {

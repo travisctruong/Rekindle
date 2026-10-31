@@ -20,9 +20,9 @@
     transition: 0.3s;
     margin-right: var(--que__pad-m);
 }
-.statcard:hover {
+/* .statcard:hover {
     transform: translateY(-4px);
-}
+} */
 .statcard__container {
     display: flex;
     flex-direction: row;
@@ -91,4 +91,15 @@
 .recently-added__date {
     color: #94a3b8;
     font-size: 0.65rem;
+}
+.recently-added__badge {
+    flex: 0 0 auto;
+    margin-left: auto;
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    background: var(--color-accent);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 600;
+    line-height: 1.4;
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import './css/music-player.css'
 
 function setMusicVolume(music, volume) {
@@ -52,6 +52,25 @@ function MusicPlayer({ music, isConnected, queue = [], startIndex, playRequest }
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
     const [isQueueOpen, setIsQueueOpen] = useState(false)
+    const queueRef = useRef(null)
+    const queueButtonRef = useRef(null)
+    const loadedSongIdRef = useRef(null)
+    const advanceRef = useRef(() => {})
+
+    useEffect(() => {
+        if (!isQueueOpen) {
+            return
+        }
+
+        function closeOnOutsideClick(event) {
+            if (!queueRef.current?.contains(event.target) && !queueButtonRef.current?.contains(event.target)) {
+                setIsQueueOpen(false)
+            }
+        }
+
+        document.addEventListener('mousedown', closeOnOutsideClick)
+        return () => document.removeEventListener('mousedown', closeOnOutsideClick)
+    }, [isQueueOpen])
 
     const song = queue[currentIndex]
     const canPlay = isConnected && Boolean(music) && Boolean(song?.apple_music_id)
@@ -69,6 +88,7 @@ function MusicPlayer({ music, isConnected, queue = [], startIndex, playRequest }
 
         try {
             await music.setQueue({ song: selectedSong.apple_music_id })
+            loadedSongIdRef.current = selectedSong.apple_music_id
             await music.play()
             setIsPlaying(true)
             void recordPlayedSong(selectedSong, music).catch((recordingError) => {
@@ -129,8 +149,12 @@ function MusicPlayer({ music, isConnected, queue = [], startIndex, playRequest }
             if (isPlaying) {
                 await music.pause()
                 setIsPlaying(false)
+            } else if (loadedSongIdRef.current === song.apple_music_id) {
+                await music.play()
+                setIsPlaying(true)
             } else {
                 await music.setQueue({ song: song.apple_music_id })
+                loadedSongIdRef.current = song.apple_music_id
                 await music.play()
                 setIsPlaying(true)
                 void recordPlayedSong(song, music).catch((recordingError) => {
@@ -168,6 +192,26 @@ function MusicPlayer({ music, isConnected, queue = [], startIndex, playRequest }
         }
     }
 
+    useEffect(() => {
+        advanceRef.current = playNext
+    })
+
+    useEffect(() => {
+        if (!music || !isConnected) {
+            return undefined
+        }
+
+        const states = window.MusicKit?.PlaybackStates
+        const handleStateChange = ({ state }) => {
+            if (state === states?.completed || state === states?.ended) {
+                advanceRef.current()
+            }
+        }
+
+        music.addEventListener('playbackStateDidChange', handleStateChange)
+        return () => music.removeEventListener('playbackStateDidChange', handleStateChange)
+    }, [music, isConnected])
+
     function playPrevious() {
         if (currentTime > 3 && song?.apple_music_id) {
             void playQueueTrack(currentIndex)
@@ -200,7 +244,7 @@ function MusicPlayer({ music, isConnected, queue = [], startIndex, playRequest }
                         aria-label={isPlaying ? 'Pause' : 'Play'}
                         onClick={togglePlayback}
                         disabled={!canPlay || isLoading}
-                        que-icon={isLoading ? 'hourglass_empty' : isPlaying ? 'pause' : 'play_arrow'}
+                        que-icon={isPlaying ? 'pause' : 'play_arrow'}
                     />
                     <button
                         type="button"
@@ -230,6 +274,7 @@ function MusicPlayer({ music, isConnected, queue = [], startIndex, playRequest }
 
             <div className="music-player-settings__container">
                 <button
+                    ref={queueButtonRef}
                     type="button"
                     aria-label={isQueueOpen ? 'Hide queue' : 'Show queue'}
                     aria-expanded={isQueueOpen}
@@ -251,23 +296,26 @@ function MusicPlayer({ music, isConnected, queue = [], startIndex, playRequest }
                 </label>
             </div>
 
-            {isQueueOpen && (
-                <ol className="music-player__queue" aria-label="Playback queue">
-                    {queue.map((queuedSong, index) => (
-                        <li key={queuedSong.apple_music_id ?? queuedSong.id}>
-                            <button
-                                type="button"
-                                className={index === currentIndex ? 'is-current' : ''}
-                                onClick={() => void playQueueTrack(index)}
-                                disabled={!isConnected || isLoading}
-                            >
-                                <span>{queuedSong.title}</span>
-                                <span>{queuedSong.artist}</span>
-                            </button>
-                        </li>
-                    ))}
-                </ol>
-            )}
+            <ol
+                ref={queueRef}
+                className={`music-player__queue${isQueueOpen ? ' is-open' : ''}`}
+                aria-label="Playback queue"
+                aria-hidden={!isQueueOpen}
+            >
+                {queue.map((queuedSong, index) => (
+                    <li key={queuedSong.apple_music_id ?? queuedSong.id}>
+                        <button
+                            type="button"
+                            className={index === currentIndex ? 'is-current' : ''}
+                            onClick={() => void playQueueTrack(index)}
+                            disabled={!isConnected || isLoading}
+                        >
+                            <span>{queuedSong.title}</span>
+                            <span>{queuedSong.artist}</span>
+                        </button>
+                    </li>
+                ))}
+            </ol>
         </section>
     )
 }

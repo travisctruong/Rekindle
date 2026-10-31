@@ -40,6 +40,7 @@ function CreatePlaylistButton({ songs }) {
         try {
             const response = await fetch('http://localhost:8000/api/songs/create-playlist', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -118,7 +119,7 @@ function CreatePlaylistButton({ songs }) {
                             />
                             {error && <p role="alert">{error}</p>}
                             <button type="submit" disabled={isCreating || Boolean(success) || !playlistName.trim()}>
-                                {isCreating ? 'Creating...' : success ? 'Playlist Created!' : 'Create playlist'}
+                                {success ? 'Playlist Created!' : 'Create playlist'}
                             </button>
                         </form>
                     </section>
@@ -204,7 +205,7 @@ function RekindleSelect() {
     }, [])
 
     return (
-        <div className='body'>
+        <div className='body rekindle-select'>
             <header>
                 <button className="global__back__button" que-icon="arrow_back_ios" type="button" onClick={() => navigate('/rekindle')}></button>
                 <h1>Rekindle</h1>
@@ -310,7 +311,7 @@ function RekindleAll({ onPlaySongs }) {
 
             <div className='rekindle-action__container'>
                 <button que-icon ="shuffle" className='rekindle-shuffle__button' onClick={() => handleRekindle()} disabled={isLoading}>
-                    {isLoading ? 'Finding songs...' : 'Rekindle'}
+                                    Rekindle
                 </button>
                 <span className="rekindle-last-synced">
                     Last synced: {lastSynced ? formatDateTime(lastSynced) : '...'}
@@ -411,7 +412,7 @@ function RekindleGenre({ onPlaySongs }) {
                     onClick={() => void handleRekindle()}
                     disabled={isLoading || !genre}
                 >
-                    {isLoading ? 'Finding songs...' : 'Rekindle'}
+                    Rekindle
                 </button>
                 <span className="rekindle-last-synced">
                     Last synced: {lastSynced ? formatDateTime(lastSynced) : '...'}

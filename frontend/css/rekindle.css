@@ -79,6 +79,33 @@ header {
 }
 
 /* Rekindle action page */
+.rekindle-select {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+html:has(.rekindle-select),
+body:has(.rekindle-select) {
+    overflow: hidden;
+}
+
+.rekindle-select > header {
+    margin-bottom: var(--que__pad-l);
+
+    & > h1 {
+        font-size: 1.75rem;
+    }
+
+    & > p {
+        font-size: 0.875rem;
+    }
+}
+
+.rekindle-select .rekindle-genre-grid {
+    margin-block: auto;
+}
+
 .rekindle-action__container {
     display: flex;
     flex-direction: column;
@@ -86,6 +113,7 @@ header {
     align-items: center;
     width: 50%;
     margin-inline: auto;
+    margin-bottom: var(--que__pad-2xl);
 }
 
 .rekindle-last-synced {
@@ -96,6 +124,7 @@ header {
 }
 
 .rekindle-shuffle__button {
+    color: white;
     min-width: 100%;
     min-height: 50px;
     border-radius: 16px;

@@ -10,7 +10,7 @@ from database.database import get_db
 from models.song import Song
 
 from apple_music.auth import generate_developer_token
-from routes import apple_music
+from routes.apple_music import get_music_user_token
 from services.genres import parse_genres
 from services.rekindle import RekindleService
 
@@ -19,13 +19,14 @@ router = APIRouter(prefix="/api/songs")
 
 
 @router.post("/create-playlist")
-async def create_playlist(data: PlaylistValidation, db: Session = Depends(get_db)):
+async def create_playlist(
+    data: PlaylistValidation,
+    music_user_token: str = Depends(get_music_user_token),
+    db: Session = Depends(get_db),
+):
     """
     Create an Apple Music playlist from ten Rekindle recommendations.
     """
-    if not apple_music.music_user_token:
-        raise HTTPException(status_code=400, detail="Connect Apple Music first")
-
     songs_by_id = {
         song.id: song
         for song in db.query(Song).filter(Song.id.in_(data.song_ids)).all()
@@ -38,7 +39,7 @@ async def create_playlist(data: PlaylistValidation, db: Session = Depends(get_db
 
     headers = {
         "Authorization": f"Bearer {generate_developer_token()}",
-        "Music-User-Token": apple_music.music_user_token,
+        "Music-User-Token": music_user_token,
     }
     user_timezone = timezone(timedelta(minutes=-data.timezone_offset_minutes))
     rekindled_at = datetime.now(user_timezone)

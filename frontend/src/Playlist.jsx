@@ -29,22 +29,21 @@ function Playlist({ onPlaySongs }) {
 
         async function getPlaylist() {
             try {
-                const endpoints =  [
-                    ['playlist', `http://localhost:8000/api/apple-music/user-playlists/`],
-                    ['playlistData', `http://localhost:8000/api/apple-music/playlist-data/${decodeURIComponent(playlistId)}`],
-                ]
-
-                const counts = await Promise.all(endpoints.map(async ([name, url]) => {
-                    const response = await fetch(url)
+                const [userPlaylists, applePlaylists, data] = await Promise.all([
+                    'http://localhost:8000/api/apple-music/user-playlists?all=true',
+                    'http://localhost:8000/api/apple-music/apple-playlists?all=true',
+                    `http://localhost:8000/api/apple-music/playlist-data/${decodeURIComponent(playlistId)}`,
+                ].map(async (url) => {
+                    const response = await fetch(url, { credentials: 'include' })
                     if (!response.ok) {
-                        throw new Error(`Failed to get ${name} count (${response.status})`)
+                        throw new Error(`Failed to get playlist details (${response.status})`)
                     }
                     return response.json()
                 }))
 
                 if (!cancelled) {
-                    setPlaylist(counts[0])
-                    setPlaylistData(counts[1])
+                    setPlaylist({ ...userPlaylists, ...applePlaylists })
+                    setPlaylistData(data)
                 }
             } catch (requestError) {
                 if (!cancelled) {
@@ -66,8 +65,8 @@ function Playlist({ onPlaySongs }) {
     const artwork = playlistDetail?.artwork
     const artworkUrl = typeof artwork === 'string' ? artwork : artwork?.url
     const sizedArtworkUrl = artworkUrl
-        ?.replace('{w}', '100')
-        .replace('{h}', '100')
+        ?.replace('{w}', '600')
+        .replace('{h}', '600')
     const playlistDescription = playlistDetail?.description
     const trackCount = Object.keys(playlistData).length
     const songs = Object.entries(playlistData).map(([id, track]) => ({
@@ -134,18 +133,9 @@ function Playlist({ onPlaySongs }) {
 
     return (
         <div className="body">
-            <header>
-                <button
-                    className="global__back__button"
-                    que-icon="arrow_back_ios"
-                    type="button"
-                    onClick={() => navigate('/library')}
-                    aria-label="Back to Library"
-                ></button>
-            </header>
             {error && <p role="alert">{error}</p>}
 
-            <div className='playlist-container'>
+            {!isLoading && (<div className='playlist-container'>
                 <div className='playlist-header'>
                     {playlistDetail && (
                         <img
@@ -155,7 +145,16 @@ function Playlist({ onPlaySongs }) {
                         />
                     )}
                     <div className='playlist-information'>
-                        <h1>{playlistDetail?.name || (isLoading ? 'Loading playlist...' : 'Playlist not found')}</h1>
+                        <div className="back-title">
+                            <button
+                                className="global__back__button"
+                                que-icon="arrow_back_ios"
+                                type="button"
+                                onClick={() => navigate('/library')}
+                                aria-label="Back to Library"
+                            ></button>
+                            <h1>{playlistDetail?.name || 'Playlist not found'}</h1>
+                        </div>
                         <h4>{playlistDescription}</h4>
                         <h4 className='playlist-information__track-count'>{trackCount} Tracks</h4>
                         {playlistDetail && Object.keys(playlistData).length === 0 && !isLoading && (
@@ -198,8 +197,7 @@ function Playlist({ onPlaySongs }) {
                         showDuration
                     />
                 </div>
-            </div>
-
+            </div>)}
         </div>
     )
 }

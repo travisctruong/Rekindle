@@ -58,7 +58,7 @@ function Library() {
                 ]
 
                 const counts = await Promise.all(endpoints.map(async ([name, url]) => {
-                    const response = await fetch(url)
+                    const response = await fetch(url, { credentials: 'include' })
                     if (!response.ok) {
                         throw new Error(`Failed to get ${name} count (${response.status})`)
                     }
@@ -98,19 +98,11 @@ function Library() {
                 }
             `}</style>
             <header>
-                <button
-                    className="global__back__button"
-                    que-icon="arrow_back_ios"
-                    type="button"
-                    onClick={() => navigate('/')}
-                    aria-label="Back to Rekindle"
-                ></button>
                 <h1>Library</h1>
                 <p>Browse your Apple Music playlists</p>
             </header>
 
             {error && <p role="alert">{error}</p>}
-            {!error && isLoading && <p>Loading playlists...</p>}
             {!error && !isLoading && (
                 <>
                     <FeatureCardGroup>
@@ -137,12 +129,11 @@ function Library() {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <h2>Your Playlists</h2>
                             <button
-                                className="feature-card__button"
+                                className="library-section-link"
                                 type="button"
                                 que-icon="arrow_forward_ios"
                                 aria-label="View all your playlists"
                                 onClick={() => navigate('/playlists/users')}
-                                style={{ flex: '0 0 54px', margin: 0 }}
                             />
                         </div>
                         {Object.keys(userPlaylists).length > 0
@@ -153,12 +144,11 @@ function Library() {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <h2>Apple Music Playlists</h2>
                             <button
-                                className="feature-card__button"
+                                className="library-section-link"
                                 type="button"
                                 que-icon="arrow_forward_ios"
                                 aria-label="View all Apple Music playlists"
                                 onClick={() => navigate('/playlists/apple')}
-                                style={{ flex: '0 0 54px', margin: 0 }}
                             />
                         </div>
                         {Object.keys(applePlaylists).length > 0
@@ -185,7 +175,9 @@ function PlaylistCollection({ type }) {
 
         async function getPlaylists() {
             try {
-                const response = await fetch(`http://localhost:8000/api/apple-music/${endpoint}?all=true`)
+                const response = await fetch(`http://localhost:8000/api/apple-music/${endpoint}?all=true`, {
+                    credentials: 'include',
+                })
                 if (!response.ok) {
                     throw new Error(`Failed to get playlists (${response.status})`)
                 }
@@ -224,7 +216,6 @@ function PlaylistCollection({ type }) {
                 <h1>{title}</h1>
             </header>
             {error && <p role="alert">{error}</p>}
-            {!error && isLoading && <p>Loading playlists...</p>}
             {!error && !isLoading && Object.keys(playlists).length === 0 && <p>No playlists found.</p>}
             {!error && !isLoading && Object.keys(playlists).length > 0 && (
                 <PlaylistGrid playlists={playlists} />
