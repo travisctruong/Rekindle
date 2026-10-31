@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Statcard from '../components/Statcard';
+import Spinner from '../components/Spinner';
 
 function formatDateTime(value) {
     const date = new Date(value)
@@ -80,7 +81,7 @@ function Home() {
     }, [])
 
     if (!error && songCount === null) {
-        return null
+        return <Spinner />
     }
 
     // Formatting Top Genres Widget

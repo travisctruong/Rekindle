@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import FeatureCard, { FeatureCardGroup } from '../components/FeatureCard'
 import RekindleList from '../components/RekindleList'
+import Spinner from '../components/Spinner'
 import '../css/rekindle.css'
 
 function formatDateTime(value) {
@@ -317,7 +318,7 @@ function RekindleAll({ onPlaySongs }) {
                     Last synced: {lastSynced ? formatDateTime(lastSynced) : '...'}
                 </span>
                 {error && <p role="alert">{error}</p>}
-                <RekindleList songs={songs} onPlaySongs={onPlaySongs} />
+                {isLoading ? <Spinner /> : <RekindleList songs={songs} onPlaySongs={onPlaySongs} />}
                 <CreatePlaylistButton songs={songs} />
             </div>
         </div>
@@ -418,7 +419,7 @@ function RekindleGenre({ onPlaySongs }) {
                     Last synced: {lastSynced ? formatDateTime(lastSynced) : '...'}
                 </span>
                 {error && <p role="alert">{error}</p>}
-                <RekindleList songs={songs} onPlaySongs={onPlaySongs} />
+                {isLoading ? <Spinner /> : <RekindleList songs={songs} onPlaySongs={onPlaySongs} />}
                 <CreatePlaylistButton songs={songs} />
             </div>
         </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import FeatureCard, { FeatureCardGroup } from '../components/FeatureCard'
+import Spinner from '../components/Spinner'
 import '../css/library.css'
 
 function PlaylistGrid({ playlists }) {
@@ -103,6 +104,7 @@ function Library() {
             </header>
 
             {error && <p role="alert">{error}</p>}
+            {!error && isLoading && <Spinner />}
             {!error && !isLoading && (
                 <>
                     <FeatureCardGroup>
@@ -216,6 +218,7 @@ function PlaylistCollection({ type }) {
                 <h1>{title}</h1>
             </header>
             {error && <p role="alert">{error}</p>}
+            {!error && isLoading && <Spinner />}
             {!error && !isLoading && Object.keys(playlists).length === 0 && <p>No playlists found.</p>}
             {!error && !isLoading && Object.keys(playlists).length > 0 && (
                 <PlaylistGrid playlists={playlists} />

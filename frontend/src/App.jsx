@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 // import AppleMusicConnect from '../components/AppleMusicConnect'
 import MusicPlayer from '../components/MusicPlayer'
 import Sidebar from '../components/Sidebar'
+import Spinner from '../components/Spinner'
 import Home from './Home'
 import Rekindle, { RekindleAll, RekindleGenre, RekindleSelect } from './Rekindle'
 import Library, { ApplePlaylists, UserPlaylists } from './Library'
@@ -183,7 +184,7 @@ function App() {
                             <Route path="/playlist/:playlistId" element={<Playlist onPlaySongs={playSongs} />} />
                             <Route path="*" element={<Navigate to="/" replace />} />
                         </Routes>
-                    ) : null}
+                    ) : <Spinner />}
                     <MusicPlayer
                         music={music}
                         isConnected={isConnected}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import RekindleList from '../components/RekindleList'
+import Spinner from '../components/Spinner'
 import '../css/playlist.css'
 
 function formatTrackDuration(durationInMillis) {
@@ -135,6 +136,7 @@ function Playlist({ onPlaySongs }) {
         <div className="body">
             {error && <p role="alert">{error}</p>}
 
+            {isLoading && <Spinner />}
             {!isLoading && (<div className='playlist-container'>
                 <div className='playlist-header'>
                     {playlistDetail && (
