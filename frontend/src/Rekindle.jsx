@@ -25,7 +25,7 @@ async function fetchLastSynced() {
     return response.json()
 }
 
-function CreatePlaylistButton({ songs }) {
+function CreatePlaylistButton({ songs, disabled }) {
     const [isOpen, setIsOpen] = useState(false)
     const [playlistName, setPlaylistName] = useState('')
     const [isCreating, setIsCreating] = useState(false)
@@ -60,7 +60,7 @@ function CreatePlaylistButton({ songs }) {
                 throw new Error(result.detail || 'Failed to create playlist')
             }
 
-            setSuccess(`Created "${result.name}" in Apple Music.`)
+            setSuccess(`Created "${result.name}" in Apple Music!`)
         } catch (requestError) {
             setError(requestError instanceof Error ? requestError.message : 'Failed to create playlist')
         } finally {
@@ -68,22 +68,18 @@ function CreatePlaylistButton({ songs }) {
         }
     }
 
-    if (songs.length === 0) {
-        return null
-    }
-
     return (
         <>
             <button
                 que-icon="download"
-                className="global__service__button"
+                className="rekindle-save__button"
                 type="button"
                 onClick={() => {
                     setError('')
                     setSuccess('')
                     setIsOpen(true)
                 }}
-                disabled={songs.length !== 10}
+                disabled={disabled || songs.length !== 10}
             >
                 Save as Playlist
             </button>
@@ -119,14 +115,37 @@ function CreatePlaylistButton({ songs }) {
                                 value={playlistName}
                             />
                             {error && <p role="alert">{error}</p>}
-                            <button type="submit" disabled={isCreating || Boolean(success) || !playlistName.trim()}>
-                                {success ? 'Playlist Created!' : 'Create playlist'}
+                            <button
+                                type="submit"
+                                className={`global__service__button${success ? ' is-success' : ''}`}
+                                disabled={isCreating || Boolean(success) || !playlistName.trim()}
+                            >
+                                {isCreating ? 'Creating playlist...' : success ? 'Playlist Created!' : 'Create playlist'}
                             </button>
+                            {success && <p className="rekindle-playlist-dialog__success" role="status">{success}</p>}
                         </form>
                     </section>
                 </div>
             )}
         </>
+    )
+}
+
+function RekindleActions({ songs, isLoading, onRekindle, disabled = false }) {
+    return (
+        <div className="rekindle-actions">
+            <button
+                className="rekindle-shuffle__button"
+                type="button"
+                onClick={onRekindle}
+                disabled={isLoading || disabled}
+                aria-busy={isLoading}
+            >
+                <span className="rekindle-shuffle__icon" que-icon="shuffle" aria-hidden="true"></span>
+                {isLoading ? 'Rekindling...' : 'Rekindle'}
+            </button>
+            <CreatePlaylistButton songs={songs} disabled={isLoading} />
+        </div>
     )
 }
 
@@ -311,15 +330,12 @@ function RekindleAll({ onPlaySongs }) {
             </header>
 
             <div className='rekindle-action__container'>
-                <button que-icon ="shuffle" className='rekindle-shuffle__button' onClick={() => handleRekindle()} disabled={isLoading}>
-                                    Rekindle
-                </button>
+                <RekindleActions songs={songs} isLoading={isLoading} onRekindle={handleRekindle} />
+                {error && <p role="alert">{error}</p>}
+                {isLoading ? <Spinner /> : <RekindleList songs={songs} onPlaySongs={onPlaySongs} />}
                 <span className="rekindle-last-synced">
                     Last synced: {lastSynced ? formatDateTime(lastSynced) : '...'}
                 </span>
-                {error && <p role="alert">{error}</p>}
-                {isLoading ? <Spinner /> : <RekindleList songs={songs} onPlaySongs={onPlaySongs} />}
-                <CreatePlaylistButton songs={songs} />
             </div>
         </div>
     );
@@ -406,21 +422,12 @@ function RekindleGenre({ onPlaySongs }) {
             </header>
 
             <div className="rekindle-action__container">
-                <button
-                    que-icon="shuffle"
-                    className="rekindle-shuffle__button"
-                    type="button"
-                    onClick={() => void handleRekindle()}
-                    disabled={isLoading || !genre}
-                >
-                    Rekindle
-                </button>
+                <RekindleActions songs={songs} isLoading={isLoading} onRekindle={handleRekindle} disabled={!genre} />
+                {error && <p role="alert">{error}</p>}
+                {isLoading ? <Spinner /> : <RekindleList songs={songs} onPlaySongs={onPlaySongs} />}
                 <span className="rekindle-last-synced">
                     Last synced: {lastSynced ? formatDateTime(lastSynced) : '...'}
                 </span>
-                {error && <p role="alert">{error}</p>}
-                {isLoading ? <Spinner /> : <RekindleList songs={songs} onPlaySongs={onPlaySongs} />}
-                <CreatePlaylistButton songs={songs} />
             </div>
         </div>
     )

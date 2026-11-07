@@ -2,6 +2,10 @@ header {
     color: #fff;
 }
 
+body {
+    /* overflow-y: hidden; */
+}
+
 /* Rekindle select genre page */
 .rekindle-genre-grid {
     display: grid;
@@ -113,29 +117,90 @@ body:has(.rekindle-select) {
     align-items: center;
     width: 50%;
     margin-inline: auto;
-    margin-bottom: var(--que__pad-2xl);
+    /* margin-bottom: var(--que__pad-2xl); */
 }
 
 .rekindle-last-synced {
-    margin-top: 0.75rem;
     color: #94a3b8;
     font-size: 0.75rem;
     font-weight: 400;
 }
 
-.rekindle-shuffle__button {
-    color: white;
-    min-width: 100%;
-    min-height: 50px;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background-color: var(--color-accent);
-    cursor: pointer;
-    transition: 0.3s;
+.rekindle-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+}
 
-    &:hover {
-        transform: translateY(-3px);
-    }
+.rekindle-shuffle__button,
+.rekindle-save__button {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 50px;
+    padding: 0.625rem;
+    border-radius: 16px;
+    color: white;
+    font: inherit;
+    cursor: pointer;
+    transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.rekindle-shuffle__button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
+    background-color: var(--color-accent);
+}
+
+.rekindle-save__button {
+    border: 1px;
+    background-color: rgba(30, 41, 59, 0.75);
+    font-size: 0.875rem;
+}
+
+.rekindle-shuffle__button:hover:not(:disabled) {
+    background-color: var(--color-accent-hover);
+}
+
+.rekindle-save__button:hover:not(:disabled) {
+    border-color: var(--color-accent);
+    background-color: rgba(0, 110, 248, 0.18);
+}
+
+.rekindle-shuffle__button:active:not(:disabled),
+.rekindle-save__button:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.rekindle-shuffle__button:disabled,
+.rekindle-save__button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.rekindle-shuffle__icon {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.rekindle-shuffle__icon::before {
+    position: static;
+    transform: none;
+}
+
+.rekindle-shuffle__button[aria-busy="true"] .rekindle-shuffle__icon {
+    animation: rekindle-shuffle 700ms ease-in-out infinite alternate;
+}
+
+@keyframes rekindle-shuffle {
+    from { transform: translateX(-3px) rotate(-12deg); }
+    to { transform: translateX(3px) rotate(12deg); }
 }
 
 .rekindle-playlist-overlay {
@@ -224,16 +289,36 @@ body:has(.rekindle-select) {
     outline: none;
 }
 
-.rekindle-playlist-dialog form button {
-    min-height: 44px;
-    border: 0;
-    border-radius: 8px;
-    color: #fff;
-    background: var(--color-accent);
-    font: inherit;
-    cursor: pointer;
+.rekindle-playlist-dialog form .global__service__button {
+    min-width: 0;
 }
 
 .rekindle-playlist-dialog form button:disabled {
     opacity: 0.65;
+}
+
+.rekindle-playlist-dialog form button.is-success {
+    background: #15803d;
+    opacity: 1;
+    animation: rekindle-save-success 400ms ease-out;
+}
+
+.rekindle-playlist-dialog__success {
+    color: #86efac;
+}
+
+@keyframes rekindle-save-success {
+    50% { transform: scale(1.03); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rekindle-shuffle__icon,
+    .rekindle-playlist-dialog form button.is-success {
+        animation: none;
+    }
+
+    .rekindle-shuffle__button,
+    .rekindle-save__button {
+        transition: none;
+    }
 }

@@ -7,6 +7,7 @@
     --palette-black: #02070a;
     --color-accent: #006ef8;
     --color-accent-hover: #0297de;
+    --page-gutter: clamp(1rem, 3vw, 2rem);
     --color-blue-50: #eff6ff;
     --color-blue-100: #dbeafe;
     --color-blue-300: #93c5fd;
@@ -22,7 +23,9 @@ body {
 }
 
 .body {
-    padding: 0px var(--que__pad-2xl);
+    box-sizing: border-box;
+    width: 100%;
+    padding-inline: var(--page-gutter);
 }
 
 .body h1 {
@@ -65,7 +68,7 @@ body {
 }
 
 header {
-    margin-bottom: var(--que__pad-xxxl);
+    margin-bottom: var(--que__pad-xl);
 }
 
 header:has(> .global__back__button) {
@@ -129,17 +132,34 @@ header:has(> .global__back__button) {
 }
 
 .global__service__button {
+    box-sizing: border-box;
     min-width: 200px;
     min-height: 50px;
+    padding: 0.625rem;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid transparent;
     background-color: var(--color-accent);
-    cursor: pointer;
-    transition: 0.3s;
     color: white;
-
-    /* &:hover {
-        transform: translateY(-3px);
-    } */
+    font: inherit;
+    cursor: pointer;
+    transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
 }
 
+.global__service__button:hover:not(:disabled) {
+    background-color: var(--color-accent-hover);
+}
+
+.global__service__button:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.global__service__button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .global__service__button {
+        transition: none;
+    }
+}

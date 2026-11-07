@@ -158,7 +158,7 @@ function Playlist({ onPlaySongs }) {
                             <h1>{playlistDetail?.name || 'Playlist not found'}</h1>
                         </div>
                         <h4>{playlistDescription}</h4>
-                        <h4 className='playlist-information__track-count'>{trackCount} Tracks</h4>
+                        <h5 className='playlist-information__track-count'>{trackCount} Tracks</h5>
                         {playlistDetail && Object.keys(playlistData).length === 0 && !isLoading && (
                             <p>This playlist has no tracks.</p>
                         )}
@@ -173,7 +173,7 @@ function Playlist({ onPlaySongs }) {
                                 Play All
                             </button>
                             <button
-                                className='global__service__button'
+                                className='global__service__button playlist-favourite-button'
                                 que-icon={areAllSongsFavourited ? 'heart_broken' : 'favorite'}
                                 type="button"
                                 onClick={() => void setPlaylistFavourite(!areAllSongsFavourited)}

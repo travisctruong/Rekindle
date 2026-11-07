@@ -93,7 +93,7 @@
 
 .feature-card__button:hover {
     cursor: pointer;
-    background-color: rgba(0, 110, 248, 0.18);
+    background-color: var(--color-accent-hover);
 }
 
 @keyframes feature-card-pop-in {

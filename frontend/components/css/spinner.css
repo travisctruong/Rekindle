@@ -1,8 +1,14 @@
 .spinner {
-    display: grid;
     flex: 1;
-    place-items: center;
     min-height: 50vh;
+}
+
+.spinner__position {
+    position: fixed;
+    inset: 0 0 var(--spinner-bottom, 0px) var(--spinner-left, 0px);
+    display: grid;
+    place-items: center;
+    pointer-events: none;
 }
 
 .spinner__ring {
