@@ -1,5 +1,3 @@
-              DONE
-                ↓
      Apple Music integration
                 ↓
         User + Song database
@@ -26,21 +24,33 @@
                 ↓
     Better recommendations (takes into account date added)
                 ↓
-       ML experimentation
+          Sync features (settings page)
                 ↓
-          Deployment
+            README.md
+                ↓  
+        End of initial features
+
+
+
+       ML experimentation (?)
+                ↓
+        User authentication
+                ↓
+          Dockerization
+                ↓
+            Deployment
                 ↓
     Cron Jobs + Emails (custom notifications that 10 rekindle for me)
 
 
 Statistics list (overview page):
 - Chart of how many songs, albums, artists added recently by day/week/month (graphs, piecharts?)
-- Most rekindled songs/artists
 - Recently added songs to library
 - Recently listened to songs
 - Favourited rate
 - Songs by genre (graph)
 - 'New' tag (for stating out-of-sync)
+- Most rekindled songs/artists
 
 Analytics
 - Most played songs recently

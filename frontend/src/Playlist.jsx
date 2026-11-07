@@ -142,7 +142,7 @@ function Playlist({ onPlaySongs }) {
                     {playlistDetail && (
                         <img
                             className="playlist-artwork"
-                            src={sizedArtworkUrl || '/rekindle-favicon.jpeg'}
+                            src={sizedArtworkUrl || '/rekindle-favicon.png'}
                             alt=""
                         />
                     )}

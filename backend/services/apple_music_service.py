@@ -297,17 +297,17 @@ class AppleMusicService:
             "Authorization": f"Bearer {generate_developer_token()}",
             "Music-User-Token": music_user_token,
         }
-        url = "https://api.music.apple.com/v1/me/library/recently-added?limit=10"
+        url = "https://api.music.apple.com/v1/me/library/recently-added?limit=5"
         timeout = httpx.Timeout(30.0, connect=10.0)
         albums_by_id = {}
 
         async with httpx.AsyncClient(timeout=timeout) as client:
-            while url and len(albums_by_id) < 10:
+            while url and len(albums_by_id) < 5:
                 payload = await self._fetch_library_page(client, url, headers)
                 for item in payload.get("data", []):
                     if item.get("type") == "library-albums":
                         albums_by_id[item["id"]] = item.get("attributes", {})
-                        if len(albums_by_id) == 10:
+                        if len(albums_by_id) == 5:
                             break
 
                 next_url = payload.get("next")

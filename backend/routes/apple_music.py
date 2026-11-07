@@ -166,7 +166,7 @@ async def get_recently_added(
     db: Session = Depends(get_db),
 ):
     """
-    Grab user's 10 most recently added albums
+    Grab user's 5 most recently added albums
     """
     try:
         recently_added = await AppleMusicService(db).fetch_recently_added(

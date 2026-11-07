@@ -163,7 +163,7 @@ function App() {
     return (
         <BrowserRouter>
             <div className="layout">
-                <Sidebar />
+                <Sidebar connectionReady={hasCheckedConnection} isConnected={isConnected} />
                 <main className="app-main">
                     {/* <AppleMusicConnect
                         connected={isConnected}

@@ -1,18 +1,8 @@
 import { useEffect, useState } from 'react';
 import Statcard from '../components/Statcard';
 import Spinner from '../components/Spinner';
-
-function formatDateTime(value) {
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) {
-        return '...'
-    }
-
-    return date.toLocaleString(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'medium',
-    })
-}
+import { GenreChart, MonthlySyncSparkline, RecentSyncChart } from '../components/DashboardCharts';
+import '../css/home.css';
 
 function formatDate(value) {
     const date = new Date(value)
@@ -27,14 +17,18 @@ function formatDate(value) {
     })
 }
 
+function monthlyGrowth(value) {
+    if (!value) return 'Monthly growth unavailable'
+    if (!value.baseline) return value.added ? 'First synced this month' : 'No change this month'
+    return `+${(value.added / value.baseline * 100).toLocaleString(undefined, { maximumFractionDigits: 1 })}% this month`
+}
+
 function Home() {
 
-    const [songCount, setSongCount] = useState(null)
-    const [albumCount, setAlbumCount] = useState(null)
-    const [artistCount, setArtistCount] = useState(null)
     const [genreCount, setGenreCount] = useState(null)
     const [recentlyAdded, setRecentlyAdded] = useState(null)
     const [lastSynced, setLastSynced] = useState(null)
+    const [dashboardStats, setDashboardStats] = useState(null)
     const [error, setError] = useState(null)
 
     useEffect(() => {
@@ -43,13 +37,13 @@ function Home() {
         // API fetches
         async function getLibraryCounts() {
             try {
+                const now = new Date()
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
                 const endpoints = [
-                    ['song', 'http://localhost:8000/api/songs/songs-count'],
-                    ['album', 'http://localhost:8000/api/songs/albums-count'],
-                    ['artist', 'http://localhost:8000/api/songs/artists-count'],
                     ['genre', 'http://localhost:8000/api/songs/genre-count'],
                     ['recentlyAdded', 'http://localhost:8000/api/apple-music/recently-added'],
                     ['lastSynced', 'http://localhost:8000/api/rekindle/last-synced'],
+                    ['dashboardStats', `http://localhost:8000/api/rekindle/dashboard-stats?month_start=${encodeURIComponent(monthStart)}`],
                 ]
                 const counts = await Promise.all(endpoints.map(async ([name, url]) => {
                     const response = await fetch(url, { credentials: 'include' })
@@ -60,12 +54,10 @@ function Home() {
                 }))
 
                 if (!cancelled) {
-                    setSongCount(counts[0])
-                    setAlbumCount(counts[1])
-                    setArtistCount(counts[2])
-                    setGenreCount(counts[3])
-                    setRecentlyAdded(counts[4])
-                    setLastSynced(counts[5])
+                    setGenreCount(counts[0])
+                    setRecentlyAdded(counts[1])
+                    setLastSynced(counts[2])
+                    setDashboardStats(counts[3])
                 }
             } catch (requestError) {
                 if (!cancelled) {
@@ -80,25 +72,23 @@ function Home() {
         }
     }, [])
 
-    if (!error && songCount === null) {
+    if (!error && dashboardStats === null) {
         return <Spinner />
     }
 
-    // Formatting Top Genres Widget
-    const topGenres = genreCount
-        ? Object.entries(genreCount).map(([genre, count]) => `${genre} (${count})`).join(', ') || 'No genres'
-        : '...'
+    if (error && dashboardStats === null) {
+        return <div className="body"><p role="alert">{error}</p></div>
+    }
 
     // Formatting Recently Added Widget
-    const recentlyAddedItems = recentlyAdded === null
-        ?? Object.entries(recentlyAdded).length === 0
+    const recentlyAddedItems = !recentlyAdded || Object.entries(recentlyAdded).length === 0
             ? <p>No recently added albums</p>
             : (
                 <div className="recently-added__items">
                     {Object.entries(recentlyAdded).map(([id, album]) => {
                         const artwork = album.artwork
                         const artworkUrl = typeof artwork === 'string' ? artwork : artwork?.url
-                        const artworkUrlSized = artworkUrl.replace('{w}', '120').replace('{h}', '120')
+                        const artworkUrlSized = artworkUrl?.replace('{w}', '120').replace('{h}', '120')
                         const albumName = album.name || 'Unknown album'
                         const artistName = album.artistName || album.artist || 'Unknown artist'
                         const dateAdded = album.dateAdded ? formatDate(album.dateAdded) : 'Date added unavailable'
@@ -107,7 +97,7 @@ function Home() {
 
                         return (
                             <article className="recently-added__item" key={id}>
-                                <img className='recently-added__artwork' src={artworkUrlSized} alt="" />
+                                {artworkUrlSized && <img className='recently-added__artwork' src={artworkUrlSized} alt="" />}
                                 <div className="recently-added__details">
                                     <strong className="recently-added__album">{albumName}</strong>
                                     <span className="recently-added__artist">{artistName}</span>
@@ -120,22 +110,28 @@ function Home() {
                 </div>
             )
 
-    // Formatting Last-Synced Widget
-    const lastSyncedFormatted = lastSynced ? formatDateTime(lastSynced) : '...'
+    const songRate = (count) => dashboardStats.songs
+        ? `${Math.round(count / dashboardStats.songs * 100)}%`
+        : '0%'
 
     return (
         <div className="body">
+            <header>
                 <h1>Welcome Travis!</h1>
+            </header>
 
-                <div className='statcard__container'>
-                    {error && <p role="alert">{error}</p>}
-                    <Statcard title="Last-Synced" value={lastSyncedFormatted}/>
-                    <Statcard title="Songs in Library" value={songCount ?? '...'} />
-                    <Statcard title="Unique Albums" value={albumCount ?? '...'} />
-                    <Statcard title="Unique Artists" value={artistCount ?? '...'} />
-                    <Statcard title="Top Genres" value={topGenres} />
-                </div>
-                <Statcard title="Recently Added to Library" value={recentlyAddedItems} className="statcard--recently-added" />
+            {error && <p role="alert">{error}</p>}
+            <div className='dashboard-grid'>
+                <Statcard title="Songs in Library" className="statcard--trend" value={<>{dashboardStats.songs}<MonthlySyncSparkline events={dashboardStats.monthly_sync.songs} asOf={dashboardStats.as_of} label="Songs" /></>} detail={monthlyGrowth(dashboardStats.monthly.songs)} />
+                <Statcard title="Unique Albums" className="statcard--trend" value={<>{dashboardStats.albums}<MonthlySyncSparkline events={dashboardStats.monthly_sync.albums} asOf={dashboardStats.as_of} label="Albums" /></>} detail={monthlyGrowth(dashboardStats.monthly.albums)} />
+                <Statcard title="Unique Artists" className="statcard--trend" value={<>{dashboardStats.artists}<MonthlySyncSparkline events={dashboardStats.monthly_sync.artists} asOf={dashboardStats.as_of} label="Artists" /></>} detail={monthlyGrowth(dashboardStats.monthly.artists)} />
+                <Statcard title="Playlists" value={dashboardStats.playlists} />
+                <Statcard title="Recently Synced" value={dashboardStats ? <RecentSyncChart periods={dashboardStats.periods} /> : '...'} className="dashboard-grid__large" />
+                <Statcard title="Top Genres" value={<GenreChart genres={genreCount} />} className="dashboard-grid__large statcard--genres" />
+                <Statcard title="Recently Added to Library" value={<>{recentlyAddedItems}<p className="dashboard-chart__note">* Recently added to Apple Music, not necessarily synced to Rekindle.</p></>} className="dashboard-grid__large statcard--recently-added" />
+                <Statcard title="Rekindled Rate" value={songRate(dashboardStats.rekindled)} className="dashboard-grid__rate" />
+                <Statcard title="Favourited Rate" value={songRate(dashboardStats.favourites)} className="dashboard-grid__rate" />
+            </div>
         </div>
     );
 }

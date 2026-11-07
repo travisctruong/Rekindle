@@ -8,7 +8,6 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    /* border-right: 1px solid var(--palette-neon-blue-light); */
     width: 240px;
     flex: 0 0 240px;
     padding: var(--que__pad-s);
@@ -73,6 +72,12 @@
     color: var(--color-accent);
 }
 
+.sidebar__sync {
+    margin: auto 1rem 0;
+    color: #94a3b8;
+    font-size: 0.75rem;
+}
+
 @media (max-width: 700px) {
     .sidebar {
         align-self: stretch;
@@ -105,5 +110,9 @@
         gap: 0.35rem;
         padding: 0.5rem 0.25rem;
         font-size: 0.8rem;
+    }
+
+    .sidebar__sync {
+        margin: 0.5rem 0 0;
     }
 }

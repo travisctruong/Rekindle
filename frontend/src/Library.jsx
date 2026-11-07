@@ -26,7 +26,7 @@ function PlaylistGrid({ playlists }) {
                         >
                             <img
                                 className="library-playlist-card__artwork"
-                                src={sizedArtworkUrl || '/rekindle-favicon.jpeg'}
+                                src={sizedArtworkUrl || '/rekindle-favicon.png'}
                                 alt=""
                                 loading="lazy"
                             />
