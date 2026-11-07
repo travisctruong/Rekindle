@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import './css/music-player.css'
 
 function setMusicVolume(music, volume) {
@@ -54,8 +54,23 @@ function MusicPlayer({ music, isConnected, queue = [], startIndex, playRequest }
     const [isQueueOpen, setIsQueueOpen] = useState(false)
     const queueRef = useRef(null)
     const queueButtonRef = useRef(null)
+    const playerRef = useRef(null)
     const loadedSongIdRef = useRef(null)
     const advanceRef = useRef(() => {})
+
+    useLayoutEffect(() => {
+        const player = playerRef.current
+        const main = player.closest('.app-main')
+        const observer = new ResizeObserver(() => {
+            main.style.setProperty('--player-height', `${player.getBoundingClientRect().height}px`)
+        })
+        observer.observe(player)
+
+        return () => {
+            observer.disconnect()
+            main.style.removeProperty('--player-height')
+        }
+    }, [])
 
     useEffect(() => {
         if (!isQueueOpen) {
@@ -221,7 +236,7 @@ function MusicPlayer({ music, isConnected, queue = [], startIndex, playRequest }
     }
 
     return (
-        <section className="music-player" aria-label="Apple Music player">
+        <section ref={playerRef} className="music-player" aria-label="Apple Music player">
             <div className="music-player__track">
                 {song?.artwork && <img src={getArtworkUrl(song.artwork)} alt="" width="56" height="56" />}
                 <div className="music-player__track-details">

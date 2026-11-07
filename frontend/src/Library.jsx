@@ -88,16 +88,6 @@ function Library() {
 
     return (
         <div className="body library-page">
-            <style>{`
-                .library-page .feature-card-group {
-                    min-height: 35vh;
-                    margin-block: 0.25rem;
-                }
-
-                .library-page .feature-card {
-                    min-height: 360px;
-                }
-            `}</style>
             <header>
                 <h1>Library</h1>
                 <p>Browse your Apple Music playlists</p>

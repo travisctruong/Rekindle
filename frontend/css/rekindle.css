@@ -91,7 +91,7 @@ body {
 
 html:has(.rekindle-select),
 body:has(.rekindle-select) {
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .rekindle-select > header {
@@ -120,6 +120,32 @@ body:has(.rekindle-select) {
     /* margin-bottom: var(--que__pad-2xl); */
 }
 
+@media (max-width: 1100px) {
+    .rekindle-action__container {
+        width: 100%;
+    }
+}
+
+@media (max-width: 700px) {
+    .rekindle-genre-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .rekindle-genre-card {
+        min-width: 0;
+        aspect-ratio: auto;
+        min-height: 180px;
+        overflow-wrap: anywhere;
+    }
+
+    .rekindle-genre-card__artwork {
+        width: min(100%, 120px);
+        height: auto;
+        aspect-ratio: 1;
+    }
+
+}
+
 .rekindle-last-synced {
     color: #94a3b8;
     font-size: 0.75rem;
@@ -131,6 +157,12 @@ body:has(.rekindle-select) {
     grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
     gap: 0.75rem;
     width: 100%;
+}
+
+@media (max-width: 700px) {
+    .rekindle-actions {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
 }
 
 .rekindle-shuffle__button,
@@ -220,6 +252,8 @@ body:has(.rekindle-select) {
     position: relative;
     box-sizing: border-box;
     width: min(100%, 420px);
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
     padding: 2rem;
     margin: 0;
     animation: rekindle-playlist-dialog-in 220ms ease-out both;

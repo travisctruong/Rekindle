@@ -96,6 +96,26 @@
     background-color: var(--color-accent-hover);
 }
 
+@media (max-width: 900px) {
+    .feature-card__description {
+        width: 100%;
+    }
+}
+
+@media (max-width: 700px) {
+    .feature-card-group {
+        flex-direction: column;
+        min-height: 0;
+        gap: 1rem;
+    }
+
+    .feature-card,
+    .library-page .feature-card {
+        flex: auto;
+        min-height: 280px;
+    }
+}
+
 @keyframes feature-card-pop-in {
     from {
         transform: translateY(18px) scale(0.94);

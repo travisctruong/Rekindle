@@ -26,7 +26,20 @@
 .statcard__container {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--que__pad-m);
     margin-bottom: var(--que__pad-m);
+}
+
+.statcard__container > .statcard {
+    flex: 1 1 160px;
+    min-width: 0;
+    margin-right: 0;
+    overflow-wrap: anywhere;
+}
+
+.statcard--recently-added {
+    max-width: 100%;
 }
 .statcard__title {
     margin: 0 0 0.5rem;
@@ -35,7 +48,7 @@
     font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
+    text-transform: none;
 }
 .statcard__value {
     margin: 0;
@@ -47,6 +60,7 @@
 .statcard--recently-added {
     display: flex;
     flex-direction: column;
+    margin-right: 0;
 }
 .recently-added__items {
     display: flex;

@@ -10,9 +10,13 @@ function Spinner() {
         const player = document.querySelector('.music-player')
 
         function updatePosition() {
-            const sidebarRight = sidebar ? sidebar.getBoundingClientRect().right : 0
+            const sidebarRect = sidebar?.getBoundingClientRect()
+            const isTopNavigation = sidebarRect && sidebarRect.width >= window.innerWidth * 0.9
+            const sidebarRight = sidebarRect && !isTopNavigation ? sidebarRect.right : 0
+            const sidebarBottom = isTopNavigation ? sidebarRect.bottom : 0
             const playerTop = player ? player.getBoundingClientRect().top : window.innerHeight
             spinner.style.setProperty('--spinner-left', `${Math.max(0, sidebarRight)}px`)
+            spinner.style.setProperty('--spinner-top', `${Math.max(0, sidebarBottom)}px`)
             spinner.style.setProperty('--spinner-bottom', `${Math.max(0, window.innerHeight - playerTop)}px`)
         }
 

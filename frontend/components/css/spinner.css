@@ -5,7 +5,7 @@
 
 .spinner__position {
     position: fixed;
-    inset: 0 0 var(--spinner-bottom, 0px) var(--spinner-left, 0px);
+    inset: var(--spinner-top, 0px) 0 var(--spinner-bottom, 0px) var(--spinner-left, 0px);
     display: grid;
     place-items: center;
     pointer-events: none;

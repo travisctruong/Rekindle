@@ -164,3 +164,40 @@
 .rekindle-list-button__container .rekindle-favourite-button[aria-pressed="true"]:hover:not(:disabled) {
     color: #dc2626;
 }
+
+@media (max-width: 700px) {
+    .rekindle-list {
+        width: 100%;
+        padding: 1rem 0.75rem;
+    }
+
+    .rekindle-list__item {
+        grid-template-columns: 1.5rem minmax(0, 1fr);
+    }
+
+    .rekindle-list__row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.25rem;
+    }
+
+    .rekindle-list__track {
+        grid-column: 1;
+    }
+
+    .rekindle-list__album,
+    .rekindle-list__duration {
+        grid-column: 1;
+        text-align: left;
+    }
+
+    .rekindle-list-button__container {
+        grid-column: 2;
+        grid-row: 1 / span 3;
+    }
+
+    .rekindle-list-button__container button {
+        width: 40px;
+        height: 44px;
+    }
+}

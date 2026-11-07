@@ -63,8 +63,19 @@ body {
     flex-direction: column;
     flex: 1;
     box-sizing: border-box;
+    min-width: 0;
     min-height: 100vh;
-    padding-bottom: 96px;
+    padding-bottom: calc(var(--player-height, 96px) + 1rem);
+}
+
+@media (max-width: 700px) {
+    .layout {
+        flex-direction: column;
+    }
+
+    .app-main {
+        min-height: 0;
+    }
 }
 
 header {
