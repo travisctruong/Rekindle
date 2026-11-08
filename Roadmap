@@ -20,13 +20,15 @@
                 ↓
         Improve UI/design (fix connection issue, sidebar, music player, playlist sync issue?) 
                 ↓
-       ★ Statistics & analytics (find more stats to start tracking), page icon
+        Statistics & analytics (find more stats to start tracking), page icon
                 ↓
-    Better recommendations (takes into account date added)
+        Interactive Sync library
                 ↓
-          Sync features (settings page)
+        ★ Better recommendations (takes into account date added)
                 ↓
-            README.md
+            README.md (endpoint/feature documentation)
+                ↓
+          Clean-up codebase
                 ↓  
         End of initial features
 

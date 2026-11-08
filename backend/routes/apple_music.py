@@ -9,7 +9,7 @@ import jwt
 from apple_music.auth import generate_developer_token
 from config import SESSION_SECRET
 from models.user import User
-from services.apple_music_service import AppleMusicService
+from services.apple_music_service import AppleMusicService, InvalidAppleMusicResponse
 from services.playlists import fetch_apple_playlists, fetch_user_playlists
 
 
@@ -118,6 +118,8 @@ async def get_apple_music_songs(
         count = await AppleMusicService(db).fetch_and_store_songs(
             music_user_token=music_user_token,
         )
+    except InvalidAppleMusicResponse as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     except httpx.TimeoutException as exc:
         raise HTTPException(
             status_code=504,
@@ -145,6 +147,8 @@ async def get_apple_music_playlists(
         count = await AppleMusicService(db).fetch_and_store_playlists(
             music_user_token=music_user_token,
         )
+    except InvalidAppleMusicResponse as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     except httpx.TimeoutException as exc:
         raise HTTPException(
             status_code=504,
@@ -152,10 +156,11 @@ async def get_apple_music_playlists(
         ) from exc
     except httpx.HTTPStatusError as exc:
         status_code = 429 if exc.response.status_code == 429 else 502
+        resource = "playlist tracks" if "/tracks" in exc.request.url.path else "playlists"
         detail = (
-            "Apple Music rate limit reached; retry the request later"
+            f"Apple Music rate limit reached while fetching {resource}; retry the request later"
             if status_code == 429
-            else "Apple Music API request failed"
+            else f"Apple Music {resource} request failed (HTTP {exc.response.status_code}); no playlist changes were saved"
         )
         raise HTTPException(status_code=status_code, detail=detail) from exc
     return {"stored": count}

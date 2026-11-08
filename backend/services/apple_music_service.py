@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from urllib.parse import quote, urljoin
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from apple_music.auth import generate_developer_token
@@ -12,6 +12,10 @@ from models.playlist_song import PlaylistSong
 from models.rekindle import Rekindle
 from models.song import Song
 from models.user import User
+
+
+class InvalidAppleMusicResponse(ValueError):
+    pass
 
 
 class AppleMusicService:
@@ -60,6 +64,23 @@ class AppleMusicService:
 
         raise RuntimeError(f"Failed to fetch Apple Music page: {url}")
 
+    @staticmethod
+    def _library_page_data(payload: dict) -> tuple[list, str | None]:
+        if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+            raise InvalidAppleMusicResponse("Apple Music returned an invalid library page")
+        for item in payload["data"]:
+            if (
+                not isinstance(item, dict)
+                or not isinstance(item.get("id"), str)
+                or not item["id"]
+                or not isinstance(item.get("attributes", {}), dict)
+            ):
+                raise InvalidAppleMusicResponse("Apple Music returned an invalid library item")
+        next_url = payload.get("next")
+        if next_url is not None and (not isinstance(next_url, str) or not next_url):
+            raise InvalidAppleMusicResponse("Apple Music returned an invalid next page")
+        return payload["data"], next_url
+
     # Sync Apple Music Library
     async def fetch_and_store_songs(
         self, music_user_token: str
@@ -87,17 +108,18 @@ class AppleMusicService:
                 )
 
                 for page_url, payload in zip(batch_urls, page_payloads):
-                    for item in payload.get("data", []):
+                    items, next_url = self._library_page_data(payload)
+                    for item in items:
                         songs_by_id[item["id"]] = item.get("attributes", {})
 
-                    next_url = payload.get("next")
                     if not next_url:
                         continue
 
                     full_next_url = urljoin(page_url, next_url)
-                    if full_next_url not in seen_urls:
-                        seen_urls.add(full_next_url)
-                        pending_urls.append(full_next_url)
+                    if full_next_url in seen_urls:
+                        raise InvalidAppleMusicResponse("Apple Music returned a repeated library page")
+                    seen_urls.add(full_next_url)
+                    pending_urls.append(full_next_url)
 
         # Push to database
         try:
@@ -114,12 +136,14 @@ class AppleMusicService:
             user_id = user.id
 
             # Grab list of user's songs that are already stored
-            existing_song_ids = {
-                song.apple_music_id
-                for song in self.db.scalars(
-                    select(Song).where(Song.user_id == user_id)
-                ).all()
-            }
+            existing_songs = self.db.scalars(
+                select(Song).where(Song.user_id == user_id)
+            ).all()
+            existing_song_ids = {song.apple_music_id for song in existing_songs}
+            for song in existing_songs:
+                if song.apple_music_id not in songs_by_id:
+                    self.db.execute(delete(Rekindle).where(Rekindle.song_id == song.id))
+                    self.db.delete(song)
 
             # Add new songs to database
             new_songs = []
@@ -131,6 +155,8 @@ class AppleMusicService:
                 artwork_url = (
                     artwork.get("url", "") if isinstance(artwork, dict) else ""
                 )
+                genres = attributes.get("genreNames")
+                duration = attributes.get("durationInMillis")
                 new_songs.append(
                     Song(
                         user_id=user_id,
@@ -138,8 +164,9 @@ class AppleMusicService:
                         title=attributes.get("name", ""),
                         artist=attributes.get("artistName", ""),
                         album=attributes.get("albumName", ""),
-                        genres=attributes.get("genreNames", ""),
-                        artwork=artwork_url,
+                        genres=", ".join(genres) if isinstance(genres, list) else (genres or ""),
+                        artwork=artwork_url or "",
+                        duration=duration if isinstance(duration, int) else 0,
                     )
                 )
 
@@ -181,26 +208,57 @@ class AppleMusicService:
         playlists_by_id = {}
 
         async with httpx.AsyncClient(timeout=timeout) as client:
+            seen_urls = set()
             while url:
+                if url in seen_urls:
+                    raise InvalidAppleMusicResponse("Apple Music returned a repeated playlist page")
+                seen_urls.add(url)
                 payload = await self._fetch_library_page(client, url, headers)
-                for item in payload.get("data", []):
+                items, next_url = self._library_page_data(payload)
+                for item in items:
+                    if not isinstance(item.get("type"), str) or not item["type"]:
+                        raise InvalidAppleMusicResponse("Apple Music returned an invalid playlist type")
                     if item.get("type") == "library-playlists":
                         playlists_by_id[item["id"]] = item.get("attributes", {})
-                next_url = payload.get("next")
                 url = urljoin(url, next_url) if next_url else ""
 
             tracks_by_playlist_id = {}
             for playlist_id in playlists_by_id:
-                tracks_url = (
+                playlist_url = (
                     "https://api.music.apple.com/v1/me/library/playlists/"
-                    f"{quote(playlist_id, safe='')}/tracks"
+                    f"{quote(playlist_id, safe='')}"
                 )
+                tracks_url = f"{playlist_url}/tracks"
+                first_tracks_url = tracks_url
                 tracks_by_id = {}
+                seen_urls = set()
                 while tracks_url:
-                    payload = await self._fetch_library_page(client, tracks_url, headers)
-                    for item in payload.get("data", []):
+                    if tracks_url in seen_urls:
+                        raise InvalidAppleMusicResponse("Apple Music returned a repeated playlist track page")
+                    seen_urls.add(tracks_url)
+                    try:
+                        payload = await self._fetch_library_page(client, tracks_url, headers)
+                    except httpx.HTTPStatusError as exc:
+                        if exc.response.status_code != 404 or tracks_url != first_tracks_url:
+                            raise
+                        playlist_payload = await self._fetch_library_page(
+                            client, f"{playlist_url}?include=tracks", headers
+                        )
+                        playlists, _ = self._library_page_data(playlist_payload)
+                        if (
+                            len(playlists) != 1
+                            or playlists[0]["id"] != playlist_id
+                            or playlists[0].get("type") != "library-playlists"
+                            or not isinstance(playlists[0].get("relationships"), dict)
+                            or not isinstance(playlists[0]["relationships"].get("tracks"), dict)
+                        ):
+                            raise InvalidAppleMusicResponse(
+                                "Apple Music did not return the requested playlist's tracks"
+                            ) from exc
+                        payload = playlists[0]["relationships"]["tracks"]
+                    items, next_url = self._library_page_data(payload)
+                    for item in items:
                         tracks_by_id[item["id"]] = item.get("attributes", {})
-                    next_url = payload.get("next")
                     tracks_url = urljoin(tracks_url, next_url) if next_url else ""
                 tracks_by_playlist_id[playlist_id] = tracks_by_id
 
@@ -220,6 +278,10 @@ class AppleMusicService:
                 playlist.apple_music_id: playlist
                 for playlist in existing_playlists
             }
+            for playlist in existing_playlists:
+                if playlist.apple_music_id not in playlists_by_id:
+                    self.db.execute(delete(PlaylistSong).where(PlaylistSong.playlist_id == playlist.id))
+                    self.db.delete(playlist)
 
             for apple_music_id, attributes in playlists_by_id.items():
                 playlist = playlists_by_apple_id.get(apple_music_id)
@@ -258,6 +320,9 @@ class AppleMusicService:
                 tracks_by_apple_id = {
                     track.apple_music_id: track for track in existing_tracks
                 }
+                for track in existing_tracks:
+                    if track.apple_music_id not in tracks_by_playlist_id[apple_music_id]:
+                        self.db.delete(track)
 
                 for track_id, track_attributes in tracks_by_playlist_id[apple_music_id].items():
                     track = tracks_by_apple_id.get(track_id)
@@ -277,11 +342,11 @@ class AppleMusicService:
                     track.title = track_attributes.get("name") or ""
                     track.artist = track_attributes.get("artistName") or ""
                     track.album = track_attributes.get("albumName") or ""
-                    track.genres = ", ".join(genres) if isinstance(genres, list) else genres
+                    track.genres = ", ".join(genres) if isinstance(genres, list) else (genres or "")
                     track.artwork = (
-                        artwork.get("url") if isinstance(artwork, dict) else None
+                        (artwork.get("url") or "") if isinstance(artwork, dict) else ""
                     )
-                    track.duration = duration if isinstance(duration, int) else None
+                    track.duration = duration if isinstance(duration, int) else 0
 
             self.db.commit()
         except Exception:

@@ -32,7 +32,7 @@
     align-items: center;
     counter-increment: rekindle-list-item;
     /* margin-bottom: 0.75rem; */
-    animation: rekindle-list-item-fade-in 350ms ease both;
+    animation: rekindle-list-item-fade-in 250ms ease both;
 }
 
 @keyframes rekindle-list-item-fade-in {

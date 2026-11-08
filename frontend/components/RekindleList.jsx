@@ -47,7 +47,7 @@ function RekindleList({ songs, onPlaySongs, showFavourites = true, onFavouriteCh
                         <li
                             className="rekindle-list__item"
                             key={song.id}
-                            style={{ animationDelay: `${index * 70}ms` }}
+                            style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
                         >
                             <div className="rekindle-list__row">
                                 <div className="rekindle-list__track">

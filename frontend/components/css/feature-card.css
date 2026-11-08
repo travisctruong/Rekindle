@@ -10,7 +10,7 @@
 .feature-card {
     display: flex;
     flex-direction: column;
-    animation: feature-card-pop-in 550ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation: feature-card-fade-in 450ms ease-out backwards;
     gap: var(--que__pad-xl);
     box-sizing: border-box;
     border-radius: 8px;
@@ -116,13 +116,19 @@
     }
 }
 
-@keyframes feature-card-pop-in {
+.feature-card-group > .feature-card:nth-child(2) {
+    animation-delay: 60ms;
+}
+
+@keyframes feature-card-fade-in {
     from {
-        transform: translateY(18px) scale(0.94);
+        opacity: 0;
+        transform: translateX(-16px);
     }
 
     to {
-        transform: translateY(0) scale(1);
+        opacity: 1;
+        transform: translateX(0);
     }
 }
 
